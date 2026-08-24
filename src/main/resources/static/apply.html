@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Apply - Digital Subsidy</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .required-document {
+            margin-bottom: 20px;
+        }
+
+        .required-document label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .required-document input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+        .scheme-benefits {
+            margin: 25px 0;
+            padding: 18px;
+            background: #f1f5f9;
+            border-left: 4px solid #6366f1;
+            border-radius: 10px;
+        }
+
+        .scheme-benefits h3 {
+            margin: 0 0 10px;
+            color: #1e293b;
+            font-size: 17px;
+        }
+
+        .scheme-benefits p {
+            margin: 0;
+            color: #475569;
+            line-height: 1.7;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body class="dashboard-page">
+
+<header class="navbar">
+
+    <div class="logo">
+        Digital<span>Subsidy</span>
+    </div>
+
+    <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="schemes.html">Schemes</a>
+        <a href="my-applications.html">My Applications</a>
+    </nav>
+
+    <div class="profile-menu">
+
+        <button class="profile-button" id="profileButton">
+
+            <span class="user-icon">👤</span>
+
+            <span id="navUserEmail">
+            User
+        </span>
+
+            <span class="dropdown-arrow">
+            ▼
+        </span>
+
+        </button>
+
+
+        <div class="profile-dropdown" id="profileDropdown">
+
+            <div class="dropdown-user">
+
+                <div class="dropdown-avatar">
+                    👤
+                </div>
+
+                <div>
+
+                    <strong id="dropdownEmail">
+                        User
+                    </strong>
+
+                    <small>
+                        Subsidy User
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <div class="dropdown-divider"></div>
+
+
+            <a href="profile.html">
+                👤 My Profile
+            </a>
+
+            <button id="logoutBtn">
+                🚪 Logout
+            </button>
+
+        </div>
+
+    </div>
+
+</header>
+
+
+<main class="apply-container">
+
+    <div class="apply-header">
+
+        <p class="hero-tag">SUBSIDY APPLICATION</p>
+
+        <h1>Apply for Scheme</h1>
+
+        <p>
+            Review the scheme details and submit your application.
+        </p>
+
+    </div>
+
+
+    <div class="apply-layout">
+
+        <!-- Scheme Details -->
+
+        <div class="scheme-summary">
+
+            <p class="hero-tag">SELECTED SCHEME</p>
+
+            <h2 id="schemeName">
+                Loading...
+            </h2>
+
+            <p id="schemeDescription"></p>
+            <div class="scheme-benefits">
+
+                <h3>✨ Scheme Benefits</h3>
+
+                <p id="schemeBenefits">
+                    Loading benefits...
+                </p>
+
+            </div>
+            <div class="scheme-summary-info">
+
+                <div>
+                    <small>Maximum Amount</small>
+                    <strong id="maximumAmount"></strong>
+                </div>
+
+                <div>
+                    <small>Maximum Income</small>
+                    <strong id="maximumIncome"></strong>
+                </div>
+
+                <div>
+                    <small>Age Limit</small>
+                    <strong id="ageLimit"></strong>
+                </div>
+
+                <div>
+                    <small>Occupation</small>
+                    <strong id="occupation"></strong>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Application Form -->
+
+        <div class="auth-card">
+
+            <div class="auth-header">
+
+                <h2>Required Documents</h2>
+
+                <p>
+                    Upload the documents required for this scheme.
+                </p>
+
+            </div>
+
+
+            <form id="applicationForm">
+
+                <!-- Required documents will appear here -->
+
+                <div id="requiredDocuments">
+
+                    <p>
+                        Loading required documents...
+                    </p>
+
+                </div>
+
+
+                <div id="applicationMessage"
+                     class="message">
+                </div>
+
+
+                <button
+                        type="submit"
+                        class="auth-submit">
+
+                    Submit Application
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</main>
+
+
+<footer>
+
+    <div class="footer-logo">
+        Digital<span>Subsidy</span>
+    </div>
+
+    <p>
+        Simple, transparent and accessible subsidy applications.
+    </p>
+
+    <div class="footer-line"></div>
+
+    <small>
+        © 2026 Digital Subsidy Platform. All rights reserved.
+    </small>
+
+</footer>
+
+
+<script src="js/apply.js"></script>
+<script src="js/navbar.js"></script>
+</body>
+</html>

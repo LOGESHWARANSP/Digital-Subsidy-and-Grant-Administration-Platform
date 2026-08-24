@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Bank Verification - Digital Subsidy</title>
+
+    <link rel="stylesheet"
+          href="css/style.css">
+
+    <style>
+
+        .bank-table-container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            overflow-x: auto;
+        }
+
+        .bank-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .bank-table th,
+        .bank-table td {
+            padding: 14px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .bank-table th {
+            background: #f8fafc;
+        }
+
+        .status-pending {
+            color: #92400e;
+            font-weight: bold;
+        }
+
+        .status-verified {
+            color: #166534;
+            font-weight: bold;
+        }
+
+        .status-rejected {
+            color: #991b1b;
+            font-weight: bold;
+        }
+
+        .verify-btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #16a34a;
+            color: white;
+            margin-right: 5px;
+        }
+
+        .reject-btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #dc2626;
+            color: white;
+        }
+
+    </style>
+
+</head>
+
+
+<body class="dashboard-page">
+
+<header class="navbar">
+
+    <div class="logo">
+        Digital<span>Subsidy</span>
+    </div>
+
+    <nav>
+        <a href="officer-dashboard.html">
+            Dashboard
+        </a>
+
+        <a href="officer-bank-details.html"
+           class="active">
+            Bank Verification
+        </a>
+    </nav>
+
+</header>
+
+
+<main class="profile-container">
+
+    <div class="profile-header">
+
+        <p class="hero-tag">
+            OFFICER
+        </p>
+
+        <h1>
+            Bank Details Verification
+        </h1>
+
+        <p>
+            Verify submitted bank details before disbursement.
+        </p>
+
+    </div>
+
+
+    <div class="bank-table-container">
+
+        <table class="bank-table">
+
+            <thead>
+
+            <tr>
+
+                <th>Application ID</th>
+
+                <th>Account Holder</th>
+
+                <th>Bank</th>
+
+                <th>Account Number</th>
+
+                <th>IFSC</th>
+
+                <th>Status</th>
+
+                <th>Action</th>
+
+            </tr>
+
+            </thead>
+
+
+            <tbody id="bankDetailsBody">
+
+            <tr>
+
+                <td colspan="7">
+                    Loading bank details...
+                </td>
+
+            </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</main>
+
+
+<script src="js/officer-bank-details.js"></script>
+
+</body>
+
+</html>
