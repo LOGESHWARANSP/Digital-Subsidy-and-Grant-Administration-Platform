@@ -2,9 +2,13 @@ package com.example.DigitalSubsidy.service;
 
 import com.example.DigitalSubsidy.entity.Application;
 import com.example.DigitalSubsidy.entity.BankDetails;
+import com.example.DigitalSubsidy.entity.InstallmentPlan;
 import com.example.DigitalSubsidy.repository.ApplicationRepo;
 import com.example.DigitalSubsidy.repository.BankDetailsRepo;
 
+import com.example.DigitalSubsidy.repository.GrantSlabRepo;
+import com.example.DigitalSubsidy.repository.InstallmentPlanRepo;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +23,17 @@ public class BankDetailsService {
     @Autowired
     ApplicationRepo applicationRepo;
 
+    @Autowired
+    EmailService emailService;
+
+    @Autowired
+    ComplianceMilestoneService complianceMilestoneService;
+    @Autowired
+    InstallmentPlanRepo installmentPlanRepo;
+    @Autowired
+    InstallmentPlanService installmentPlanService;
+    @Autowired
+    GrantSlabRepo grantSlabRepo;
 
     // User submits bank details
     public BankDetails createBankDetails(
@@ -38,10 +53,9 @@ public class BankDetailsService {
 
 
         // Only approved application can submit bank details
-        if (!"APPROVED".equals(application.getStatus())) {
-
+        if (!"DISTRICT_APPROVED".equals(application.getStatus())) {
             throw new RuntimeException(
-                    "Bank details can be submitted only after application approval"
+                    "Bank details can be submitted only after district approval"
             );
         }
 
@@ -125,10 +139,10 @@ public class BankDetailsService {
         return bankDetailsRepo.findById(id)
                 .orElse(null);
     }
-
-
-    // Officer verifies bank details
+    @Transactional
     public BankDetails verifyBankDetails(Long id) {
+
+        System.out.println("VERIFY BANK CALLED FOR ID = " + id);
 
         BankDetails bankDetails =
                 bankDetailsRepo.findById(id)
@@ -138,20 +152,126 @@ public class BankDetailsService {
                                 )
                         );
 
+        // =========================================
+        // VERIFY BANK DETAILS
+        // =========================================
 
-        bankDetails.setVerificationStatus(
-                "VERIFIED"
+        bankDetails.setVerificationStatus("VERIFIED");
+
+        BankDetails savedBankDetails =
+                bankDetailsRepo.save(bankDetails);
+
+
+        // =========================================
+        // GET APPLICATION
+        // =========================================
+
+        Application application =
+                bankDetails.getApplication();
+
+        System.out.println(
+                "APPLICATION ID = "
+                        + application.getId()
+                        + " OLD STATUS = "
+                        + application.getStatus()
         );
 
 
-        return bankDetailsRepo.save(
-                bankDetails
+        // =========================================
+        // APPROVE APPLICATION
+        // =========================================
+
+        application.setStatus("APPROVED");
+
+        application.setStatusUpdatedDate(
+                java.time.LocalDateTime.now()
         );
+
+        Application savedApplication =
+                applicationRepo.saveAndFlush(application);
+
+
+        System.out.println(
+                "APPLICATION STATUS = "
+                        + savedApplication.getStatus()
+        );
+
+
+        // =========================================
+        // FIND GRANT AMOUNT
+        // =========================================
+
+        Double grantAmount =
+                grantSlabRepo
+                        .findBySchemeIdAndMinimumIncomeLessThanEqualAndMaximumIncomeGreaterThanEqual(
+                                savedApplication.getScheme().getId(),
+                                savedApplication.getUser().getAnnualIncome(),
+                                savedApplication.getUser().getAnnualIncome()
+                        )
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Grant slab not found"
+                                )
+                        )
+                        .getGrantAmount();
+
+
+        System.out.println(
+                "GRANT AMOUNT = " + grantAmount
+        );
+
+
+        // =========================================
+        // CREATE INSTALLMENT PLAN
+        // =========================================
+
+        installmentPlanService.createInstallmentPlan(
+                savedApplication,
+                grantAmount
+        );
+
+
+        System.out.println(
+                "INSTALLMENT PLAN CREATED FOR APPLICATION = "
+                        + savedApplication.getId()
+        );
+
+
+        // =========================================
+        // CREATE COMPLIANCE MILESTONES
+        // =========================================
+
+        complianceMilestoneService
+                .createDefaultMilestones(
+                        savedApplication
+                );
+
+
+        // =========================================
+        // SEND EMAIL
+        // =========================================
+
+        emailService.sendBankDetailsVerifiedEmail(
+                savedApplication.getUser().getEmailId(),
+                savedApplication.getUser().getFirstName(),
+                savedApplication.getScheme().getSchemeName()
+        );
+
+
+        return savedBankDetails;
     }
 
 
+
+
+    // Officer verifies bank details
+    // Officer verifies bank details
+
     // Officer rejects bank details
-    public BankDetails rejectBankDetails(Long id) {
+    public BankDetails rejectBankDetails(
+            Long id,
+            String reason
+    ) {
 
         BankDetails bankDetails =
                 bankDetailsRepo.findById(id)
@@ -160,16 +280,28 @@ public class BankDetailsService {
                                         "Bank details not found"
                                 )
                         );
-
 
         bankDetails.setVerificationStatus(
                 "REJECTED"
         );
 
+        BankDetails savedBankDetails =
+                bankDetailsRepo.save(bankDetails);
 
-        return bankDetailsRepo.save(
-                bankDetails
+
+        Application application =
+                bankDetails.getApplication();
+
+
+        // SEND REJECTION EMAIL
+        emailService.sendBankDetailsRejectedEmail(
+                application.getUser().getEmailId(),
+                application.getUser().getFirstName(),
+                reason
         );
+
+
+        return savedBankDetails;
     }
     public BankDetails getByApplicationId(
             Long applicationId) {
@@ -178,4 +310,5 @@ public class BankDetailsService {
                 .findByApplicationId(applicationId)
                 .orElse(null);
     }
-}
+    }
+

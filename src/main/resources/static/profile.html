@@ -57,7 +57,7 @@
                     </strong>
 
                     <small>
-                        Subsidy User
+                        User
                     </small>
                 </div>
 
@@ -192,6 +192,21 @@
                     >
 
                 </div>
+                <div class="form-group">
+                    <label for="beneficiaryCategory">
+                        Beneficiary Category
+                    </label>
+
+                    <select id="beneficiaryCategory">
+                        <option value="">Select Category</option>
+                        <option value="OC">OC</option>
+                        <option value="BC">BC</option>
+                        <option value="MBC">MBC</option>
+                        <option value="SC">SC</option>
+                        <option value="ST">ST</option>
+                    </select>
+                </div>
+
 
 
                 <div class="form-group">
@@ -200,12 +215,16 @@
                         Annual Income
                     </label>
 
-                    <input
-                            type="number"
-                            id="annualIncome"
-                            placeholder="Enter annual income"
-                            required
-                    >
+                    <select id="annualIncome" required>
+                        <option value="">Select Annual Income</option>
+                        <option value="100000">Below ₹1,00,000</option>
+                        <option value="200000">₹1,00,000 - ₹2,00,000</option>
+                        <option value="300000">₹2,00,000 - ₹3,00,000</option>
+                        <option value="400000">₹3,00,000 - ₹4,00,000</option>
+                        <option value="500000">₹4,00,000 - ₹5,00,000</option>
+                        <option value="700000">₹5,00,000 - ₹7,00,000</option>
+                        <option value="1000000">Above ₹7,00,000</option>
+                    </select>
 
                 </div>
                 <div class="form-group">
@@ -223,6 +242,9 @@
                         <option value="Fisherman">Fisherman</option>
                         <option value="Worker">Worker</option>
                         <option value="Senior Citizen">Senior Citizen</option>
+                        <option value="MINORITY">Minority</option>
+                        <option value="DISABLED">Disabled</option>
+                        <option value="Housewife">House Wife</option>
                     </select>
 
                 </div>

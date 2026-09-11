@@ -14,6 +14,7 @@ async function loadProfile() {
         window.location.href = "login.html";
         return;
     }
+
     document.getElementById("emailId").value =
         userEmail || "";
 
@@ -27,6 +28,10 @@ async function loadProfile() {
             }
         );
 
+        if (!response.ok) {
+            throw new Error("Unable to load users");
+        }
+
         const users = await response.json();
 
         const currentUser = users.find(
@@ -36,13 +41,14 @@ async function loadProfile() {
                 userEmail.trim().toLowerCase()
         );
 
-
         if (currentUser) {
 
-            // Store user ID for PUT
+            // Store ID for PUT update
             currentUserId = currentUser.id;
 
-            // Fill existing data
+
+            // ================= USER DETAILS =================
+
             document.getElementById("firstName").value =
                 currentUser.firstName || "";
 
@@ -52,36 +58,76 @@ async function loadProfile() {
             document.getElementById("phone").value =
                 currentUser.phone || "";
 
+
+            // ================= EMAIL =================
+
             document.getElementById("emailId").value =
-                userEmail || "";
+                currentUser.emailId || userEmail;
+
+
+            // ================= GENDER =================
+
+            document.getElementById("gender").value =
+                currentUser.gender || "";
+
+
+            // ================= DATE OF BIRTH =================
+
             document.getElementById("dateofbirth").value =
                 currentUser.dateofbirth || "";
+
+
+            // ================= BENEFICIARY CATEGORY =================
+
+            document.getElementById("beneficiaryCategory").value =
+                currentUser.beneficiaryCategory || "";
+
+
+            // ================= ANNUAL INCOME =================
 
             document.getElementById("annualIncome").value =
                 currentUser.annualIncome || "";
 
+
+            // ================= OCCUPATION =================
+
             document.getElementById("occupation").value =
                 currentUser.occupation || "";
 
+
+            // ================= LOCATION =================
+
             document.getElementById("location").value =
                 currentUser.location || "";
-            document.getElementById("gender").value =
-                currentUser.gender || "";
 
-            // Change button text
+
+            // ================= BUTTON =================
+
             document.querySelector(".auth-submit").textContent =
                 "Update Details";
+
+
+            // ================= PROFILE HEADER =================
+
+            document.getElementById("profileName").textContent =
+                currentUser.firstName +
+                " " +
+                currentUser.lastName;
+
+            document.getElementById("profileEmail").textContent =
+                currentUser.emailId;
 
         }
 
     } catch (error) {
 
-        console.error("Profile loading failed:", error);
+        console.error(
+            "Profile loading failed:",
+            error
+        );
 
     }
 }
-
-
 // ================= SAVE / UPDATE PROFILE =================
 
 profileForm.addEventListener(
@@ -107,6 +153,8 @@ profileForm.addEventListener(
 
             dateofbirth:
             document.getElementById("dateofbirth").value,
+            beneficiaryCategory:
+            document.getElementById("beneficiaryCategory").value,
 
             annualIncome:
                 Number(

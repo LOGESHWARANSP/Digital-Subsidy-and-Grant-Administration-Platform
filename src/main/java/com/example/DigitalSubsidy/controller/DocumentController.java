@@ -52,8 +52,20 @@ public class DocumentController {
     }
 
     @PutMapping("/{id}/reject")
-    public Document rejectDocument(@PathVariable Long id) {
-        return documentService.rejectDocument(id);
+    public Document rejectDocument(
+            @PathVariable Long id,
+            @RequestParam String reason) {
+
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new RuntimeException(
+                    "Rejection reason is required"
+            );
+        }
+
+        return documentService.rejectDocument(
+                id,
+                reason.trim()
+        );
     }
     @GetMapping("/application/{applicationId}")
     public List<Document> getDocumentsByApplication(
@@ -89,5 +101,17 @@ public class DocumentController {
                 )
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(resource);
+    }
+
+    @PostMapping("/utilization-proof/{milestoneId}")
+    public Document uploadUtilizationProof(
+            @RequestParam("file") MultipartFile file,
+            @PathVariable Long milestoneId)
+            throws IOException {
+
+        return documentService.uploadUtilizationProof(
+                file,
+                milestoneId
+        );
     }
 }

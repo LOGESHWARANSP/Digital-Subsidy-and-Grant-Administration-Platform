@@ -15,6 +15,50 @@
 
     <style>
 
+        /* ================= NAVBAR ================= */
+
+        .navbar {
+            position: relative;
+        }
+
+        .navbar nav {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+
+            display: flex;
+            align-items: center;
+            gap: 35px;
+        }
+
+        .navbar nav a {
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .profile-menu {
+            margin-left: auto;
+            position: relative;
+        }
+
+        .profile-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .profile-dropdown {
+            display: none;
+        }
+
+        .profile-dropdown.show {
+            display: block;
+        }
+
+
+        /* ================= BANK TABLE ================= */
+
         .bank-table-container {
             background: white;
             padding: 25px;
@@ -71,6 +115,13 @@
             background: #dc2626;
             color: white;
         }
+        .navbar nav a.active {
+            color: #2563eb;
+
+            background: #eff6ff;
+
+            font-weight: 700;
+        }
 
     </style>
 
@@ -79,25 +130,93 @@
 
 <body class="dashboard-page">
 
+
 <header class="navbar">
+
+    <!-- ================= LOGO ================= -->
 
     <div class="logo">
         Digital<span>Subsidy</span>
     </div>
 
+
+    <!-- ================= CENTER NAVIGATION ================= -->
+
     <nav>
-        <a href="officer-dashboard.html">
-            Dashboard
-        </a>
 
         <a href="officer-bank-details.html"
            class="active">
             Bank Verification
         </a>
+
+        <a href="admin-payments.html">
+            Payments
+        </a>
+
     </nav>
+
+
+    <!-- ================= PROFILE ================= -->
+
+    <div class="profile-menu">
+
+        <button class="profile-button"
+                id="profileButton">
+
+            <span class="user-icon">
+                👤
+            </span>
+
+            <span id="staffEmail">
+                Loading...
+            </span>
+
+            <span class="dropdown-arrow">
+                ▼
+            </span>
+
+        </button>
+
+
+        <div class="profile-dropdown"
+             id="profileDropdown">
+
+            <div class="dropdown-user">
+
+                <div class="dropdown-avatar">
+                    👤
+                </div>
+
+                <div>
+
+                    <strong id="dropdownStaffEmail">
+                        Loading...
+                    </strong>
+
+                    <small id="staffRoleText">
+                        Loading...
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <div class="dropdown-divider"></div>
+
+
+            <button id="logoutBtn">
+                🚪 Logout
+            </button>
+
+        </div>
+
+    </div>
 
 </header>
 
+
+<!-- ================= MAIN ================= -->
 
 <main class="profile-container">
 
@@ -164,7 +283,14 @@
 </main>
 
 
+<!-- ================= BANK DETAILS JS ================= -->
+
 <script src="js/officer-bank-details.js"></script>
+
+
+<!-- ================= PROFILE JS ================= -->
+
+
 
 </body>
 

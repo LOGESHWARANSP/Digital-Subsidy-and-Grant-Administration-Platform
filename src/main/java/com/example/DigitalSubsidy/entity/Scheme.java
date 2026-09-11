@@ -12,12 +12,10 @@ public class Scheme {
     private Long id;
 
     private String schemeName;
-
-    private Double maximumAmount;
     private Integer minimumAge;
     private Integer maximumAge;
-    private Double maximumIncome;
     private String eligibleOccupation;
+    @Column(length = 100)
     private String eligibleLocation;
     private String requiredDocuments;
     private LocalDate startDate;
@@ -28,6 +26,8 @@ public class Scheme {
     private String benefits;
     @Column(length = 1000)
     private String description;
+    @Column(length = 25)
+    private String eligibleBeneficiaryCategory;
 
     public String getBenefits() {
         return benefits;
@@ -53,14 +53,6 @@ public class Scheme {
         this.description = description;
     }
 
-    public Double getMaximumAmount() {
-        return maximumAmount;
-    }
-
-    public void setMaximumAmount(Double maximumAmount) {
-        this.maximumAmount = maximumAmount;
-    }
-
     public Integer getMinimumAge() {
         return minimumAge;
     }
@@ -75,14 +67,6 @@ public class Scheme {
 
     public void setMaximumAge(Integer maximumAge) {
         this.maximumAge = maximumAge;
-    }
-
-    public Double getMaximumIncome() {
-        return maximumIncome;
-    }
-
-    public void setMaximumIncome(Double maximumIncome) {
-        this.maximumIncome = maximumIncome;
     }
 
     public String getEligibleOccupation() {
@@ -143,4 +127,11 @@ public class Scheme {
         this.eligibleGender = eligibleGender;
     }
 
+    public String getEligibleBeneficiaryCategory() {
+        return eligibleBeneficiaryCategory;
+    }
+
+    public void setEligibleBeneficiaryCategory(String eligibleBeneficiaryCategory) {
+        this.eligibleBeneficiaryCategory = eligibleBeneficiaryCategory;
+    }
 }

@@ -11,7 +11,8 @@ public class Disbursement {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
+    @ManyToOne
+    @JoinColumn(name = "application_id")
     private Application application;
     private Double amount;
     private Integer installmentNumber;

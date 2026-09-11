@@ -52,4 +52,22 @@ public class ApplicationController {
     public Application withdrawApplication(@PathVariable Long id) {
         return service.withdrawApplication(id);
     }
+
+    @PostMapping("/{id}/documents-submitted")
+    public String documentsSubmitted(
+            @PathVariable Long id) {
+
+        service.sendDocumentsSubmittedEmail(id);
+        System.out.println("================================");
+        System.out.println("DOCUMENT EMAIL ENDPOINT CALLED");
+        System.out.println("APPLICATION ID: " + id);
+        System.out.println("================================");
+
+        return "Document submission email sent";
+    }
+    @GetMapping("/history")
+    public List<Application> getOlderRecords() {
+
+        return service.getOlderRecords();
+    }
 }

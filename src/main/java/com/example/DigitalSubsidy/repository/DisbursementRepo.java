@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface DisbursementRepo extends JpaRepository<Disbursement,Long> {
 
     List<Disbursement> findByApplicationId(Long applicationId);
+    void deleteByApplicationId(Long applicationId);
 }

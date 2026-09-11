@@ -59,8 +59,8 @@ public class BankDetailsController {
     // Officer rejects bank details
     @PutMapping("/{id}/reject")
     public BankDetails rejectBankDetails(
-            @PathVariable Long id) {
+            @PathVariable Long id,@RequestParam String reason) {
 
-        return service.rejectBankDetails(id);
+        return service.rejectBankDetails(id,reason);
     }
 }

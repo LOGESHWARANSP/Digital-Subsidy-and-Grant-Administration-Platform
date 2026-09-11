@@ -23,7 +23,16 @@ public class User {
  private String occupation;
  private String location;
  private String gender;
+ private String beneficiaryCategory;
 
+
+    public String getBeneficiaryCategory() {
+        return beneficiaryCategory;
+    }
+
+    public void setBeneficiaryCategory(String beneficiaryCategory) {
+        this.beneficiaryCategory = beneficiaryCategory;
+    }
     public String getLastName() {
         return lastName;
     }

@@ -6,10 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface ApplicationRepo extends JpaRepository<Application,Long> {
-    boolean existsByUserIdAndSchemeIdAndStatusNot(
+    boolean existsByUserIdAndSchemeIdAndStatusNotIn(
             Long userId,
             Long schemeId,
-            String status
+            List<String> statuses
     );
     List<Application> findByUserId(Long userId);
 }

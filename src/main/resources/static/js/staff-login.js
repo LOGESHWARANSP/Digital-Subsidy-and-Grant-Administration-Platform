@@ -4,6 +4,30 @@ const staffLoginForm =
 const staffMessage =
     document.getElementById("staffMessage");
 
+const staffPassword =
+    document.getElementById("staffPassword");
+
+const toggleStaffPassword =
+    document.getElementById("toggleStaffPassword");
+
+
+// Show / hide password
+toggleStaffPassword.addEventListener("click", function () {
+
+    if (staffPassword.type === "password") {
+
+        staffPassword.type = "text";
+        toggleStaffPassword.textContent = "🙈";
+
+    } else {
+
+        staffPassword.type = "password";
+        toggleStaffPassword.textContent = "👁";
+
+    }
+
+});
+
 
 staffLoginForm.addEventListener(
     "submit",
@@ -15,7 +39,7 @@ staffLoginForm.addEventListener(
             document.getElementById("staffEmail").value;
 
         const password =
-            document.getElementById("staffPassword").value;
+            staffPassword.value;
 
 
         staffMessage.className = "message";
@@ -41,57 +65,41 @@ staffLoginForm.addEventListener(
             );
 
 
-            if (!response.ok) {
+            if (response.ok) {
 
-                staffMessage.className =
-                    "message error";
+                const staff = await response.json();
 
-                staffMessage.textContent =
-                    "Invalid email or password.";
+                // Remove normal user login
+                localStorage.removeItem("userEmail");
 
-                return;
-            }
+                // Store staff login
+                localStorage.setItem("staffEmail", staff.email);
+                localStorage.setItem("staffRole", staff.role);
 
-
-            const staff =
-                await response.json();
-
-
-            localStorage.setItem(
-                "staffEmail",
-                staff.email
-            );
-
-            localStorage.setItem(
-                "staffRole",
-                staff.role
-            );
-
-
-            staffMessage.className =
-                "message success";
-
-            staffMessage.textContent =
-                "Login successful!";
-
-
-            setTimeout(function() {
+                // Redirect based on role
 
                 if (staff.role === "ADMIN") {
 
-                    window.location.href =
-                        "admin-dashboard.html";
+                    window.location.href = "admin-dashboard.html";
+
+                }
+                else if (staff.role === "FIELD_OFFICER") {
+
+                    window.location.href = "field-officer.html";
+
+                }
+                else if (staff.role === "DISTRICT_OFFICER") {
+
+                    window.location.href = "district-officer.html";
+
+                }
+                else if (staff.role === "FINANCE_OFFICER") {
+
+                    window.location.href = "officer-bank-details.html";
 
                 }
 
-                else if (staff.role === "OFFICER") {
-
-                    window.location.href =
-                        "officer-dashboard.html";
-
-                }
-
-            },800);
+            }
 
         }
 

@@ -19,6 +19,15 @@ public class Document {
 
     @ManyToOne
     private Application application;
+    private String rejectionReason;
+
+    public String getRejectionReason() {
+        return rejectionReason;
+    }
+
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
+    }
 
     public Long getId() {
         return id;

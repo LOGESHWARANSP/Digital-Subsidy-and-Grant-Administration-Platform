@@ -3,11 +3,22 @@
     const loggedInEmail =
         localStorage.getItem("userEmail");
 
-    if (!loggedInEmail) {
+    const staffEmail =
+        localStorage.getItem("staffEmail");
+
+    const staffRole =
+        localStorage.getItem("staffRole");
+
+
+    // ================= LOGIN CHECK =================
+
+    if (!loggedInEmail && !staffEmail) {
         window.location.href = "login.html";
         return;
     }
 
+
+    // ================= EMAIL =================
 
     const profileButton =
         document.getElementById("profileButton");
@@ -21,21 +32,46 @@
     const dropdownEmail =
         document.getElementById("dropdownEmail");
 
+    const logoutBtn =
+        document.getElementById("logoutBtn");
+
+
+    const email =
+        staffEmail || loggedInEmail;
+
 
     if (navUserEmail) {
-        navUserEmail.textContent = loggedInEmail;
+        navUserEmail.textContent = email;
     }
 
     if (dropdownEmail) {
-        dropdownEmail.textContent = loggedInEmail;
+        dropdownEmail.textContent = email;
     }
 
+
+    // ================= FINANCE OFFICER =================
+    // Hide admin-only navbar items
+
+    if (staffRole === "FINANCE_OFFICER") {
+
+        document
+            .querySelectorAll(".admin-only")
+            .forEach(item => {
+                item.style.display = "none";
+            });
+
+    }
+
+
+    // ================= DROPDOWN =================
 
     if (profileButton && profileDropdown) {
 
         profileButton.addEventListener(
             "click",
-            function () {
+            function (event) {
+
+                event.stopPropagation();
 
                 profileDropdown.classList.toggle("show");
 
@@ -45,9 +81,28 @@
     }
 
 
-    const logoutBtn =
-        document.getElementById("logoutBtn");
+    // Close when clicking outside
 
+    document.addEventListener(
+        "click",
+        function (event) {
+
+            if (
+                profileDropdown &&
+                profileButton &&
+                !profileButton.contains(event.target) &&
+                !profileDropdown.contains(event.target)
+            ) {
+
+                profileDropdown.classList.remove("show");
+
+            }
+
+        }
+    );
+
+
+    // ================= LOGOUT =================
 
     if (logoutBtn) {
 
@@ -56,9 +111,11 @@
             function () {
 
                 localStorage.removeItem("userEmail");
+                localStorage.removeItem("staffEmail");
+                localStorage.removeItem("staffRole");
 
                 window.location.href =
-                    "login.html";
+                    "staff-login.html";
 
             }
         );

@@ -1,5 +1,6 @@
 package com.example.DigitalSubsidy.controller;
 
+import com.example.DigitalSubsidy.dto.EligibleSchemeDTO;
 import com.example.DigitalSubsidy.entity.Scheme;
 import com.example.DigitalSubsidy.service.SchemeService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +31,9 @@ public class SchemeController {
     }
 
     @GetMapping("/eligible/{userId}")
-    public List<Scheme> getEligibleSchemes(@PathVariable Long userId) {
+    public List<EligibleSchemeDTO> getEligibleSchemes(
+            @PathVariable Long userId) {
+
         return service.getEligibleSchemes(userId);
     }
 

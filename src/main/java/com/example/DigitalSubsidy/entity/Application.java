@@ -4,6 +4,8 @@ import com.example.DigitalSubsidy.entity.User;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 public class Application {
@@ -20,6 +22,34 @@ public class Application {
     private String status;
     private String remarks;
     private String rejectionReason;
+    private LocalDateTime statusUpdatedDate;
+    private Integer eligibilityScore;
+    private String routingStatus;
+
+    @OneToMany(mappedBy = "application")
+    private List<Disbursement> disbursements;
+    @OneToMany(mappedBy = "application")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private List<InstallmentPlan> installmentPlans;
+    public List<InstallmentPlan> getInstallmentPlans() {
+        return installmentPlans;
+    }
+
+    public String getRoutingStatus() {
+        return routingStatus;
+    }
+
+    public void setRoutingStatus(String routingStatus) {
+        this.routingStatus = routingStatus;
+    }
+
+    public Integer getEligibilityScore() {
+        return eligibilityScore;
+    }
+
+    public void setEligibilityScore(Integer eligibilityScore) {
+        this.eligibilityScore = eligibilityScore;
+    }
 
     public String getRejectionReason() {
         return rejectionReason;
@@ -67,6 +97,15 @@ public class Application {
 
     public void setRemarks(String remarks) {
         this.remarks = remarks;
+    }
+    public LocalDateTime getStatusUpdatedDate() {
+        return statusUpdatedDate;
+    }
+
+    public void setStatusUpdatedDate(
+            LocalDateTime statusUpdatedDate) {
+
+        this.statusUpdatedDate = statusUpdatedDate;
     }
 
     public Long getId() {

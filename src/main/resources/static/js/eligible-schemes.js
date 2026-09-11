@@ -4,6 +4,25 @@ const container =
 const userEmail =
     localStorage.getItem("userEmail");
 
+if (!userEmail) {
+    window.location.href = "login.html";
+}
+
+
+const navUserEmail =
+    document.getElementById("navUserEmail");
+
+const dropdownEmail =
+    document.getElementById("dropdownEmail");
+
+if (navUserEmail) {
+    navUserEmail.textContent = userEmail;
+}
+
+if (dropdownEmail) {
+    dropdownEmail.textContent = userEmail;
+}
+
 
 async function loadEligibleSchemes() {
 
@@ -28,6 +47,7 @@ async function loadEligibleSchemes() {
         const currentUser = users.find(
             user =>
                 user.emailId &&
+                userEmail &&
                 user.emailId.trim().toLowerCase() ===
                 userEmail.trim().toLowerCase()
         );
@@ -38,7 +58,11 @@ async function loadEligibleSchemes() {
             container.innerHTML = `
                 <div class="empty-state">
                     <h3>Profile not found</h3>
-                    <p>Please complete your profile first.</p>
+
+                    <p>
+                        Please complete your profile first.
+                    </p>
+
                     <a href="profile.html"
                        class="btn primary-btn">
                         Complete Profile
@@ -52,8 +76,8 @@ async function loadEligibleSchemes() {
 
         // Get eligible schemes
         const response = await fetch(
-            "http://localhost:8080/schemes/eligible/"
-            + currentUser.id,
+            "http://localhost:8080/schemes/eligible/" +
+            currentUser.id,
             {
                 credentials: "include"
             }
@@ -66,6 +90,9 @@ async function loadEligibleSchemes() {
 
 
         const schemes = await response.json();
+
+
+        // Get all applications
         const applicationResponse = await fetch(
             "http://localhost:8080/applications",
             {
@@ -79,6 +106,23 @@ async function loadEligibleSchemes() {
 
         const applications =
             await applicationResponse.json();
+
+
+        // Get all disbursements
+        const disbursementResponse = await fetch(
+            "http://localhost:8080/disbursements",
+            {
+                credentials: "include"
+            }
+        );
+
+        if (!disbursementResponse.ok) {
+            throw new Error("Unable to load disbursements");
+        }
+
+        const disbursements =
+            await disbursementResponse.json();
+
 
         container.innerHTML = "";
 
@@ -102,14 +146,17 @@ async function loadEligibleSchemes() {
 
             return;
         }
+        schemes.forEach(function (item) {
 
+            const scheme = item.scheme;
+            const grantSlab = item.grantSlab;
+            const eligibilityScore =
+                item.eligibilityScore;
 
-        schemes.forEach(function (scheme) {
-
-            const card =
-                document.createElement("div");
+            const card = document.createElement("div");
 
             card.className = "scheme-card";
+
 
             const existingApplication =
                 applications.find(
@@ -118,97 +165,121 @@ async function loadEligibleSchemes() {
                         application.scheme &&
                         application.user.id === currentUser.id &&
                         application.scheme.id === scheme.id &&
-                        application.status !== "WITHDRAWN"
+                        ![
+                            "WITHDRAWN",
+                            "REJECTED"
+                        ].includes(application.status)
                 );
+
+
+// Check whether payment has already been completed
+            const alreadyDisbursed =
+                disbursements.some(
+                    disbursement =>
+                        disbursement.application &&
+                        Number(disbursement.application.user?.id) === Number(currentUser.id) &&
+                        Number(disbursement.application.scheme?.id) === Number(scheme.id)
+                );
+
 
             let buttonHtml;
 
-            if (existingApplication) {
+
+            if (existingApplication || alreadyDisbursed) {
 
                 buttonHtml = `
-        <button
-            class="scheme-btn"
-            disabled>
-
-            Already Applied
-
-        </button>
-    `;
+            <button
+                class="scheme-btn"
+                disabled>
+                Already Applied
+            </button>
+        `;
 
             } else {
 
                 buttonHtml = `
-        ${buttonHtml}    `;
+            <button
+                class="scheme-btn"
+                onclick="applyForScheme(${scheme.id})">
+                Apply Now
+            </button>
+        `;
             }
+
+
             card.innerHTML = `
 
-                <div class="scheme-top">
+        <div class="scheme-top">
 
-                    <span class="scheme-badge">
-                        ELIGIBLE
-                    </span>
+            <span class="scheme-badge">
+                ELIGIBLE
+            </span>
 
-                </div>
-
-
-                <h3>
-                    ${scheme.schemeName}
-                </h3>
+        </div>
 
 
-                <p>
-                    ${scheme.description || ""}
-                </p>
+        <h3>
+            ${scheme.schemeName}
+        </h3>
 
 
-                <div class="scheme-info">
-
-                    <div>
-                        <small>Maximum Amount</small>
-
-                        <strong>
-                            ₹${scheme.maximumAmount}
-                        </strong>
-                    </div>
+        <p>
+            ${scheme.description || ""}
+        </p>
 
 
-                    <div>
-                        <small>Maximum Income</small>
+        <div class="scheme-info">
 
-                        <strong>
-                            ₹${scheme.maximumIncome}
-                        </strong>
-                    </div>
-
-                </div>
-
-
-                <div class="scheme-details">
-
-                    <p>
-                        <strong>Age:</strong>
-                        ${scheme.minimumAge}
-                        -
-                        ${scheme.maximumAge}
-                    </p>
-
-                    <p>
-                        <strong>Occupation:</strong>
-                        ${scheme.eligibleOccupation}
-                    </p>
-
-                    </div>
+            <div>
+                <small>Eligible Grant</small>
+                <strong>
+                    ₹${grantSlab ? grantSlab.grantAmount : 0}
+                </strong>
+            </div>
 
 
-                <button
-                    class="scheme-btn"
-                    onclick="applyForScheme(${scheme.id})">
+            <div>
+                <small>Income Slab</small>
+                <strong>
+                    ₹${grantSlab ? grantSlab.minimumIncome : 0}
+                    -
+                    ₹${grantSlab ? grantSlab.maximumIncome : 0}
+                </strong>
+            </div>
 
-                    Apply Now
+        </div>
 
-                </button>
 
-            `;
+        <div class="scheme-details">
+        <p>
+            <strong>Category:</strong>
+            ${scheme.eligibleBeneficiaryCategory || "ALL"}
+        </p>
+
+
+            <p>
+                <strong>Location:</strong>
+                ${scheme.eligibleLocation || "ALL"}
+            </p>
+
+
+            <p>
+                <strong>Age:</strong>
+                ${scheme.minimumAge} - ${scheme.maximumAge}
+            </p>
+
+
+            <p>
+                <strong>Occupation:</strong>
+                ${scheme.eligibleOccupation}
+            </p>
+
+        </div>
+
+
+        ${buttonHtml}
+
+    `;
 
 
             container.appendChild(card);
@@ -222,7 +293,9 @@ async function loadEligibleSchemes() {
         container.innerHTML = `
             <div class="empty-state">
 
-                <h3>Unable to load eligible schemes</h3>
+                <h3>
+                    Unable to load eligible schemes
+                </h3>
 
                 <p>
                     Please try again later.
@@ -238,6 +311,7 @@ async function applyForScheme(schemeId) {
 
     try {
 
+        // Get users
         const userResponse =
             await fetch(
                 "http://localhost:8080/users",
@@ -246,18 +320,22 @@ async function applyForScheme(schemeId) {
                 }
             );
 
+
         if (!userResponse.ok) {
             throw new Error("Unable to load user");
         }
+
 
         const users =
             await userResponse.json();
 
 
+        // Find current user
         const currentUser =
             users.find(
                 user =>
                     user.emailId &&
+                    userEmail &&
                     user.emailId.trim().toLowerCase() ===
                     userEmail.trim().toLowerCase()
             );
@@ -265,14 +343,15 @@ async function applyForScheme(schemeId) {
 
         if (!currentUser) {
 
-            alert("Please complete your profile first.");
+            alert(
+                "Please complete your profile first."
+            );
 
             return;
         }
 
 
         // Get all applications
-
         const applicationResponse =
             await fetch(
                 "http://localhost:8080/applications",
@@ -287,39 +366,54 @@ async function applyForScheme(schemeId) {
             throw new Error(
                 "Unable to check applications"
             );
-
         }
 
 
         const applications =
             await applicationResponse.json();
-
-
-        // Check same user's application for same scheme
-
-        const existingApplication =
-            applications.find(
-                application =>
-                    application.user &&
-                    application.scheme &&
-                    application.user.id === currentUser.id &&
-                    application.scheme.id === Number(schemeId) &&
-                    application.status !== "WITHDRAWN"
+        const disbursementResponse =
+            await fetch(
+                "http://localhost:8080/disbursements",
+                {
+                    credentials: "include"
+                }
             );
 
+        if (!disbursementResponse.ok) {
+            throw new Error(
+                "Unable to check disbursements"
+            );
+        }
 
-        if (existingApplication) {
+        const disbursements =
+            await disbursementResponse.json();
+
+
+        // Check existing ACTIVE application
+        const alreadyDisbursed =
+            disbursements.some(
+                disbursement =>
+                    disbursement.application &&
+                    Number(disbursement.application.user?.id) === Number(currentUser.id) &&
+                    Number(disbursement.application.scheme?.id) === Number(schemeId)
+            );
+
+        if (alreadyDisbursed) {
 
             alert(
-                "You have already applied for this scheme."
+                "You have already received the subsidy for this scheme."
             );
 
             return;
         }
 
 
-        // No active/previous application
-        // OR previous application was WITHDRAWN
+
+
+        // Allow application if:
+        // No previous application
+        // OR previous status = WITHDRAWN
+        // OR previous status = REJECTED
 
         window.location.href =
             "apply.html?schemeId=" + schemeId;
@@ -333,20 +427,26 @@ async function applyForScheme(schemeId) {
         alert(
             "Unable to check your application status."
         );
-
     }
-
 }
 
 
+// Logout
 document.getElementById("logoutBtn")
-    .addEventListener("click", function () {
+    .addEventListener(
+        "click",
+        function () {
 
-        localStorage.removeItem("userEmail");
+            localStorage.removeItem(
+                "userEmail"
+            );
 
-        window.location.href = "login.html";
+            window.location.href =
+                "login.html";
 
-    });
+        }
+    );
 
 
+// Load schemes
 loadEligibleSchemes();

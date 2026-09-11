@@ -1,8 +1,37 @@
+// ================= GET STAFF DATA =================
+
+const staffEmail =
+    localStorage.getItem("staffEmail");
+
+const staffRole =
+    localStorage.getItem("staffRole");
+
+
+// ================= ACCESS CHECK =================
+
+if (
+    !staffEmail ||
+    (staffRole !== "ADMIN" &&
+        staffRole !== "FINANCE_OFFICER")
+) {
+
+    window.location.href =
+        "staff-login.html";
+
+    // Stop execution
+    throw new Error("Unauthorized access");
+}
+
+
+// ================= TABLE =================
+
 const bankDetailsBody =
     document.getElementById(
         "bankDetailsBody"
     );
 
+
+// ================= LOAD BANK DETAILS =================
 
 async function loadBankDetails() {
 
@@ -57,6 +86,8 @@ async function loadBankDetails() {
                 let actionHTML = "";
 
 
+                // ================= ACTIONS =================
+
                 if (
                     bank.verificationStatus ===
                     "PENDING"
@@ -81,12 +112,15 @@ async function loadBankDetails() {
                         </button>
 
                     `;
+
                 } else {
 
                     actionHTML =
                         "No action";
                 }
 
+
+                // ================= TABLE ROW =================
 
                 row.innerHTML = `
 
@@ -131,12 +165,10 @@ async function loadBankDetails() {
         );
 
 
-        // VERIFY BUTTONS
+        // ================= VERIFY BUTTONS =================
 
         document
-            .querySelectorAll(
-                ".verify-btn"
-            )
+            .querySelectorAll(".verify-btn")
             .forEach(
                 function (button) {
 
@@ -155,12 +187,10 @@ async function loadBankDetails() {
             );
 
 
-        // REJECT BUTTONS
+        // ================= REJECT BUTTONS =================
 
         document
-            .querySelectorAll(
-                ".reject-btn"
-            )
+            .querySelectorAll(".reject-btn")
             .forEach(
                 function (button) {
 
@@ -211,10 +241,13 @@ async function loadBankDetails() {
             </tr>
 
         `;
+
     }
 
 }
 
+
+// ================= VERIFY BANK =================
 
 async function verifyBank(id) {
 
@@ -227,7 +260,6 @@ async function verifyBank(id) {
                 + "/verify",
                 {
                     method: "PUT",
-
                     credentials: "include"
                 }
             );
@@ -267,7 +299,10 @@ async function verifyBank(id) {
 
 }
 
-async function rejectBank(id) {
+
+// ================= REJECT BANK =================
+
+async function rejectBank(id, reason) {
 
     try {
 
@@ -275,12 +310,14 @@ async function rejectBank(id) {
             await fetch(
                 "http://localhost:8080/bank-details/"
                 + id
-                + "/reject",
+                + "/reject?reason="
+                + encodeURIComponent(reason),
                 {
                     method: "PUT",
                     credentials: "include"
                 }
             );
+
 
         if (!response.ok) {
 
@@ -295,20 +332,147 @@ async function rejectBank(id) {
             return;
         }
 
-        alert("Bank details rejected");
+
+        alert(
+            "Bank details rejected successfully"
+        );
+
 
         loadBankDetails();
+
 
     } catch (error) {
 
         console.error(error);
 
-        alert("Unable to connect to server");
+        alert(
+            "Unable to connect to server"
+        );
 
     }
 
 }
 
-// Load when page opens
+
+// ================= PROFILE =================
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        // ================= EMAIL =================
+
+        const staffEmailElement =
+            document.getElementById(
+                "staffEmail"
+            );
+
+        const dropdownStaffEmail =
+            document.getElementById(
+                "dropdownStaffEmail"
+            );
+
+
+        if (staffEmailElement) {
+
+            staffEmailElement.textContent =
+                staffEmail;
+
+        }
+
+
+        if (dropdownStaffEmail) {
+
+            dropdownStaffEmail.textContent =
+                staffEmail;
+
+        }
+
+
+        // ================= ROLE =================
+
+        const staffRoleText =
+            document.getElementById(
+                "staffRoleText"
+            );
+
+
+        if (staffRoleText) {
+
+            staffRoleText.textContent =
+                staffRole === "ADMIN"
+                    ? "Administrator"
+                    : "Finance Officer";
+
+        }
+
+
+        // ================= PROFILE DROPDOWN =================
+
+        const profileButton =
+            document.getElementById(
+                "profileButton"
+            );
+
+        const profileDropdown =
+            document.getElementById(
+                "profileDropdown"
+            );
+
+
+        if (
+            profileButton &&
+            profileDropdown
+        ) {
+
+            profileButton.addEventListener(
+                "click",
+                function () {
+
+                    profileDropdown.classList.toggle(
+                        "show"
+                    );
+
+                }
+            );
+
+        }
+
+
+        // ================= LOGOUT =================
+
+        const logoutBtn =
+            document.getElementById(
+                "logoutBtn"
+            );
+
+
+        if (logoutBtn) {
+
+            logoutBtn.addEventListener(
+                "click",
+                function () {
+
+                    localStorage.removeItem(
+                        "staffEmail"
+                    );
+
+                    localStorage.removeItem(
+                        "staffRole"
+                    );
+
+                    window.location.href =
+                        "staff-login.html";
+
+                }
+            );
+
+        }
+
+    }
+);
+
+
+// ================= LOAD WHEN PAGE OPENS =================
 
 loadBankDetails();

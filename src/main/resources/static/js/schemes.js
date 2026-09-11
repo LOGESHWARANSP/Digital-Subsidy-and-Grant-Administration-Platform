@@ -20,7 +20,8 @@ async function loadSchemes() {
         }
 
 
-        // Get users
+        // ================= GET USERS =================
+
         const userResponse =
             await fetch(
                 "http://localhost:8080/users",
@@ -43,7 +44,8 @@ async function loadSchemes() {
             await userResponse.json();
 
 
-        // Find logged-in user
+        // ================= FIND CURRENT USER =================
+
         const currentUser =
             users.find(
                 user =>
@@ -66,7 +68,8 @@ async function loadSchemes() {
         }
 
 
-        // Get schemes
+        // ================= GET SCHEMES =================
+
         const response =
             await fetch(
                 "http://localhost:8080/schemes",
@@ -90,7 +93,8 @@ async function loadSchemes() {
             await response.json();
 
 
-        // Get all applications
+        // ================= GET APPLICATIONS =================
+
         const applicationResponse =
             await fetch(
                 "http://localhost:8080/applications",
@@ -113,22 +117,77 @@ async function loadSchemes() {
             await applicationResponse.json();
 
 
-        // Only current user's applications
-        const myApplications =
-            applications.filter(
-                application =>
-                    application.user &&
-                    application.user.id ===
-                    currentUser.id
-            );
-
-
         schemeContainer.innerHTML = "";
+
+
+        // ================= NO SCHEMES =================
+
+        if (schemes.length === 0) {
+
+            schemeContainer.innerHTML = `
+
+                <div class="empty-state">
+
+                    <h3>
+                        No schemes available
+                    </h3>
+
+                    <p>
+                        Currently, no subsidy schemes are available.
+                    </p>
+
+                </div>
+
+            `;
+
+            return;
+        }
 
 
         // ================= DISPLAY SCHEMES =================
 
-        schemes.forEach(function (scheme) {
+        for (const scheme of schemes) {
+
+
+            // ================= GET GRANT SLABS =================
+
+            const slabResponse =
+                await fetch(
+                    `http://localhost:8080/grant-slabs/scheme/${scheme.id}`,
+                    {
+                        method: "GET",
+                        credentials: "include"
+                    }
+                );
+
+
+            let slabs = [];
+
+
+            if (slabResponse.ok) {
+
+                slabs =
+                    await slabResponse.json();
+
+            }
+
+
+            // ================= FIND HIGHEST GRANT =================
+
+            const maximumGrant =
+                slabs.length > 0
+                    ? Math.max(
+                        ...slabs.map(
+                            slab =>
+                                Number(
+                                    slab.grantAmount
+                                )
+                        )
+                    )
+                    : 0;
+
+
+            // ================= CREATE CARD =================
 
             const card =
                 document.createElement("div");
@@ -137,31 +196,40 @@ async function loadSchemes() {
                 "scheme-card";
 
 
-            // Check whether user already applied
+            // ================= CHECK APPLICATION =================
+
             const existingApplication =
-                myApplications.find(
+                applications.find(
                     application =>
+                        application.user &&
                         application.scheme &&
+                        application.user.id ===
+                        currentUser.id &&
                         application.scheme.id ===
                         scheme.id &&
-                        application.status !==
-                        "WITHDRAWN"
+                        ![
+                            "WITHDRAWN",
+                            "REJECTED"
+                        ].includes(
+                            application.status
+                        )
                 );
 
+
+            // ================= BUTTON =================
 
             let buttonHTML;
 
 
             if (existingApplication) {
 
-                // Already applied
                 buttonHTML = `
 
                     <button
-                        class="scheme-btn applied-btn"
-                        onclick="viewApplication()">
+                        class="scheme-btn"
+                        disabled>
 
-                        Applied ✓
+                        Already Applied
 
                     </button>
 
@@ -169,7 +237,6 @@ async function loadSchemes() {
 
             } else {
 
-                // Not applied / withdrawn
                 buttonHTML = `
 
                     <button
@@ -185,74 +252,66 @@ async function loadSchemes() {
             }
 
 
+            // ================= CARD =================
+
             card.innerHTML = `
 
                 <div class="scheme-top">
 
                     <span class="scheme-badge">
+
                         ${scheme.status}
+
                     </span>
 
                 </div>
 
 
                 <h3>
+
                     ${scheme.schemeName}
+
                 </h3>
 
 
-                <p>
+                <p class="scheme-description">
+
                     ${scheme.description ||
             "No description available"}
+
                 </p>
 
 
-                <div class="scheme-info">
+                <!-- ================= GRANT ================= -->
 
-                    <div>
+                <div class="scheme-grant">
 
-                        <small>
-                            Maximum Amount
-                        </small>
+                    <small>
+                        Grant up to
+                    </small>
 
-                        <strong>
-                            ₹${scheme.maximumAmount}
-                        </strong>
-
-                    </div>
-
-
-                    <div>
-
-                        <small>
-                            Maximum Income
-                        </small>
-
-                        <strong>
-                            ₹${scheme.maximumIncome}
-                        </strong>
-
-                    </div>
+                    <strong>
+                        ₹${maximumGrant.toLocaleString("en-IN")}
+                    </strong>
 
                 </div>
 
 
-                <div class="scheme-details">
+                <!-- ================= ELIGIBLE FOR ================= -->
 
-                    <p>
-                        <strong>Age:</strong>
-                        ${scheme.minimumAge} -
-                        ${scheme.maximumAge}
-                    </p>
+                <div class="scheme-eligible">
 
+                    <strong>
+                        Eligible for:
+                    </strong>
 
-                    <p>
-                        <strong>Occupation:</strong>
-                        ${scheme.eligibleOccupation}
-                    </p>
-  
+                    ${scheme.eligibleOccupation ||
+            "All applicants"}
+
                 </div>
 
+
+                <!-- ================= BUTTON ================= -->
 
                 ${buttonHTML}
 
@@ -261,18 +320,27 @@ async function loadSchemes() {
 
             schemeContainer.appendChild(card);
 
-        });
+        }
 
 
     } catch (error) {
 
         console.error(error);
 
+
         schemeContainer.innerHTML = `
 
-            <p>
-                Unable to load schemes.
-            </p>
+            <div class="empty-state">
+
+                <h3>
+                    Unable to load schemes
+                </h3>
+
+                <p>
+                    Please try again later.
+                </p>
+
+            </div>
 
         `;
 
@@ -318,5 +386,7 @@ document.getElementById("logoutBtn")
         }
     );
 
+
+// ================= LOAD =================
 
 loadSchemes();

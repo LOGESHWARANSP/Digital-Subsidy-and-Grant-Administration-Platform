@@ -17,9 +17,6 @@ public class AuthService {
     @Autowired
     PasswordEncoder passwordEncoder;
 
-    @Autowired
-    AuthenticationManager authenticationManager;
-
     public AuthUser register(AuthUser user) {
 
         user.setPassword(

@@ -324,6 +324,13 @@
         .delete-scheme-btn:hover {
             background: #fee2e2;
         }
+        .navbar nav a.active {
+            color: #2563eb;
+
+            background: #eff6ff;
+
+            font-weight: 700;
+        }
 
     </style>
 
@@ -345,33 +352,13 @@
 
 
     <nav>
-
-        <a href="admin-dashboard.html">
-
-            Dashboard
-
-        </a>
-
-
-        <a href="admin-schemes.html"
-           class="active">
-
-            Schemes
-
-        </a>
-
-
-        <a href="admin-users.html">
-
-            Users
-
-        </a>
-        <a href="admin-applications.html">
-
-            Applications
-
-        </a>
-        <a href="admin-payments.html">Payments</a>
+        <a href="admin-dashboard.html">Dashboard</a>
+        <a href="admin-schemes.html" class="active">Schemes</a>
+        <a href="admin-users.html">Users</a>
+        <a href="admin-applications.html">Applications</a>
+        <a href="officer-bank-details.html"> Bank Details</a>
+        <a href="admin-payments.html"> Payments</a>
+        <a href="admin-regional-allocation.html">Regional Allocation</a>
     </nav>
 
 
@@ -546,24 +533,180 @@
                         required>
 
             </div>
+            <div class="form-group">
+
+                <label>Eligible Gender</label>
+
+                <select id="eligibleGender">
+
+                    <option value="ALL">
+                        All Genders
+                    </option>
+
+                    <option value="MALE">
+                        Male
+                    </option>
+
+                    <option value="FEMALE">
+                        Female
+                    </option>
+
+                    <option value="OTHER">
+                        Other
+                    </option>
+
+                </select>
+
+            </div>
 
 
 
             <!-- MAX AMOUNT -->
 
-            <div class="form-group">
+            <div class="form-group full-width">
 
-                <label for="maximumAmount">
-
-                    Maximum Subsidy Amount (₹)
-
+                <label style="
+        display:block;
+        font-size:16px;
+        font-weight:600;
+        color:#163a63;
+        margin-bottom:12px;
+    ">
+                    Grant Amount Slabs
                 </label>
 
-                <input
-                        type="number"
-                        id="maximumAmount"
-                        min="0"
-                        required>
+                <div id="slabContainer">
+
+                    <div class="slab-row" style="
+            display:grid;
+            grid-template-columns:1fr 1fr 1fr 1fr auto;
+            gap:12px;
+            align-items:center;
+            padding:16px;
+            margin-bottom:12px;
+            background:#f8fafc;
+            border:1px solid #dbe3ec;
+            border-radius:10px;
+        ">
+
+                        <!-- Minimum Income -->
+                        <!-- Minimum Income -->
+                        <select name="minimumIncome" required style="
+                                width:100%;
+                                padding:12px 14px;
+                                border:1px solid #cbd5e1;
+                                border-radius:8px;
+                                background:white;
+                                font-size:14px;
+                                color:#334155;
+                                outline:none;
+                            ">
+                            <option value="">Min Income</option>
+
+                            <option value="0">₹0</option>
+
+                            <option value="100001">₹1,00,001</option>
+
+                            <option value="200001">₹2,00,001</option>
+
+                            <option value="300001">₹3,00,001</option>
+
+                            <option value="400001">₹4,00,001</option>
+
+                            <option value="500001">₹5,00,001</option>
+
+                            <option value="600001">₹6,00,001</option>
+
+                            <option value="700001">₹7,00,001</option>
+                        </select>
+
+                        <!-- Maximum Income -->
+                        <select name="maximumIncome" required style="
+                width:100%;
+                padding:12px 14px;
+                border:1px solid #cbd5e1;
+                border-radius:8px;
+                background:white;
+                font-size:14px;
+                color:#334155;
+                outline:none;
+            ">
+                            <option value="">Max Income</option>
+                            <option value="100000">₹1,00,000</option>
+                            <option value="200000">₹2,00,000</option>
+                            <option value="300000">₹3,00,000</option>
+                            <option value="400000">₹4,00,000</option>
+                            <option value="500000">₹5,00,000</option>
+                            <option value="700000">₹7,00,000</option>
+                            <option value="1000000">₹10,00,000</option>
+                        </select>
+
+
+
+
+                        <!-- Grant Amount -->
+                        <select name="grantAmount" required style="
+    width:100%;
+    padding:12px 14px;
+    border:1px solid #cbd5e1;
+    border-radius:8px;
+    background:white;
+    font-size:14px;
+    color:#334155;
+    outline:none;
+">
+                            <option value="">Grant Amount</option>
+
+                            <option value="20000">₹20,000</option>
+
+                            <option value="30000">₹30,000</option>
+
+                            <option value="50000">₹50,000</option>
+
+                            <option value="75000">₹75,000</option>
+
+                            <option value="100000">₹1,00,000</option>
+                            <option value="200000">₹2,00,000</option>
+
+                        </select>
+
+                        <!-- Remove -->
+                        <button
+                                type="button"
+                                onclick="removeSlab(this)"
+                                style="
+                    padding:10px 14px;
+                    border:1px solid #fecaca;
+                    border-radius:8px;
+                    background:#fff1f2;
+                    color:#dc2626;
+                    font-size:13px;
+                    font-weight:600;
+                    cursor:pointer;
+                ">
+                            Remove
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <button
+                        type="button"
+                        onclick="addSlab()"
+                        style="
+            width:100%;
+            padding:12px;
+            border:1px dashed #94a3b8;
+            border-radius:8px;
+            background:#f8fafc;
+            color:#163a63;
+            font-size:14px;
+            font-weight:600;
+            cursor:pointer;
+        ">
+                    + Add Grant Slab
+                </button>
 
             </div>
 
@@ -606,28 +749,95 @@
                         required>
 
             </div>
-
-
-
-            <!-- MAX INCOME -->
-
             <div class="form-group">
 
-                <label for="maximumIncome">
+                <label>Beneficiary Category</label>
 
-                    Maximum Annual Income (₹)
+                <div id="beneficiaryCategoryGroup"
+                     style="
+            display:flex;
+            flex-wrap:wrap;
+            gap:12px;
+            padding:10px 0;
+         ">
 
-                </label>
+                    <label>
+                        <input type="checkbox"
+                               name="beneficiaryCategory"
+                               value="ALL">
+                        ALL
+                    </label>
+                    <label>
+                        <input type="checkbox"
+                               name="beneficiaryCategory"
+                               value="BC">
+                        BC
+                    </label>
+                    <label>
+                        <input type="checkbox"
+                               name="beneficiaryCategory"
+                               value="MBC">
+                        MBC
+                    </label>
 
-                <input
-                        type="number"
-                        id="maximumIncome"
-                        min="0"
-                        required>
+                    <label>
+                        <input type="checkbox"
+                               name="beneficiaryCategory"
+                               value="SC">
+                        SC
+                    </label>
+
+                    <label>
+                        <input type="checkbox"
+                               name="beneficiaryCategory"
+                               value="ST">
+                        ST
+                    </label>
+
+                </div>
 
             </div>
 
 
+            <div class="form-group">
+                <label for="eligibleLocation">
+                    Eligible Location
+                </label>
+
+                <select id="eligibleLocation">
+                    <option value="ALL">ALL</option>
+                        <option>Andhra Pradesh</option>
+                        <option>Arunachal Pradesh</option>
+                        <option>Assam</option>
+                        <option>Bihar</option>
+                        <option>Chhattisgarh</option>
+                        <option>Goa</option>
+                        <option>Gujarat</option>
+                        <option>Haryana</option>
+                        <option>Himachal Pradesh</option>
+                        <option>Jharkhand</option>
+                        <option>Karnataka</option>
+                        <option>Kerala</option>
+                        <option>Madhya Pradesh</option>
+                        <option>Maharashtra</option>
+                        <option>Manipur</option>
+                        <option>Meghalaya</option>
+                        <option>Mizoram</option>
+                        <option>Nagaland</option>
+                        <option>Odisha</option>
+                        <option>Punjab</option>
+                        <option>Rajasthan</option>
+                        <option>Sikkim</option>
+                        <option>Tamil Nadu</option>
+                        <option>Telangana</option>
+                        <option>Tripura</option>
+                        <option>Uttar Pradesh</option>
+                        <option>Uttarakhand</option>
+                        <option>West Bengal</option>
+
+
+                </select>
+            </div>
 
             <!-- OCCUPATION -->
 
@@ -646,35 +856,14 @@
                     <option value="Fisherman">Fisherman</option>
                     <option value="Worker">Worker</option>
                     <option value="Senior Citizen">Senior Citizen</option>
+                    <option value="Housewife">House Wife</option>
+                    <option value="MINORITY">Minority</option>
+                    <option value="DISABLED">Disabled</option>
                 </select>
 
             </div>
 
-            <div class="form-group">
 
-                <label>Eligible Gender</label>
-
-                <select id="eligibleGender">
-
-                    <option value="ALL">
-                        All Genders
-                    </option>
-
-                    <option value="MALE">
-                        Male
-                    </option>
-
-                    <option value="FEMALE">
-                        Female
-                    </option>
-
-                    <option value="OTHER">
-                        Other
-                    </option>
-
-                </select>
-
-            </div>
             <!-- START DATE -->
 
             <div class="form-group">
@@ -819,8 +1008,6 @@
                 <th>ID</th>
 
                 <th>Scheme Name</th>
-
-                <th>Amount</th>
 
                 <th>Age Limit</th>
 

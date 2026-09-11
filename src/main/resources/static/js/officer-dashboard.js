@@ -1,3 +1,6 @@
+console.log("OFFICER DASHBOARD JS LOADED");
+console.log(document.getElementById("applicationsContainer"));
+console.log(document.getElementById("totalCount"));
 const container =
     document.getElementById("applicationsContainer");
 

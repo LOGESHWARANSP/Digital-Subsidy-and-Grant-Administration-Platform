@@ -43,6 +43,13 @@
             margin: 0 auto;
             padding: 50px 70px;
         }
+        .navbar nav a.active {
+            color: #2563eb;
+
+            background: #eff6ff;
+
+            font-weight: 700;
+        }
     </style>
 
 </head>
@@ -59,24 +66,13 @@
 
 
     <nav>
-
-        <a href="admin-dashboard.html">
-            Dashboard
-        </a>
-
-        <a href="admin-schemes.html">
-            Schemes
-        </a>
-
-        <a href="admin-users.html">
-            Users
-        </a>
-
-        <a href="admin-applications.html"
-           class="active">
-            Applications
-        </a>
-        <a href="admin-payments.html">Payments</a>
+        <a href="admin-dashboard.html">Dashboard</a>
+        <a href="admin-schemes.html">Schemes</a>
+        <a href="admin-users.html">Users</a>
+        <a href="admin-applications.html" class="active"> Applications</a>
+        <a href="officer-bank-details.html"> Bank Details</a>
+        <a href="admin-payments.html"> Payments</a>
+        <a href="admin-regional-allocation.html">Regional Allocation</a>
 
     </nav>
 
@@ -160,7 +156,13 @@
     </div>
 
 
+    <button
+            class="history-btn"
+            onclick="window.location.href='application-history.html'">
 
+        📜 View Older Records
+
+    </button>
     <!-- APPLICATION DETAILS / UPDATE -->
 
     <div class="scheme-form-card"

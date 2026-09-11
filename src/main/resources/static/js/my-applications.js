@@ -4,6 +4,24 @@ const container =
 const userEmail =
     localStorage.getItem("userEmail");
 
+if (!userEmail) {
+    window.location.href = "login.html";
+}
+
+const navUserEmail =
+    document.getElementById("navUserEmail");
+
+const dropdownEmail =
+    document.getElementById("dropdownEmail");
+
+if (navUserEmail) {
+    navUserEmail.textContent = userEmail;
+}
+
+if (dropdownEmail) {
+    dropdownEmail.textContent = userEmail;
+}
+
 
 async function loadApplications() {
 
@@ -17,7 +35,8 @@ async function loadApplications() {
 
     try {
 
-        // Get user profiles
+        // ================= GET USER PROFILES =================
+
         const userResponse = await fetch(
             "http://localhost:8080/users",
             {
@@ -39,7 +58,8 @@ async function loadApplications() {
             await userResponse.json();
 
 
-        // Find logged-in user
+        // ================= FIND LOGGED-IN USER =================
+
         const currentUser =
             users.find(
                 user =>
@@ -78,7 +98,8 @@ async function loadApplications() {
         }
 
 
-        // Get all applications
+        // ================= GET ALL APPLICATIONS =================
+
         const response = await fetch(
             "http://localhost:8080/applications",
             {
@@ -100,33 +121,76 @@ async function loadApplications() {
             await response.json();
 
 
-        // Only logged-in user's applications
+        // ================= ONLY LOGGED-IN USER'S APPLICATIONS =================
+
         const myApplications =
             applications
-                .filter(
-                    application =>
-                        application.user &&
-                        application.user.id === currentUser.id &&
-                        application.status !== "WITHDRAWN"
-                )
-                .sort(
-                    (a, b) => {
+                .filter(application => {
 
-                        const dateDifference =
-                            new Date(b.applicationDate) -
-                            new Date(a.applicationDate);
-
-                        if (dateDifference !== 0) {
-                            return dateDifference;
-                        }
-
-                        return b.id - a.id;
+                    if (!application.user) {
+                        return false;
                     }
-                );
+
+
+                    const sameUser =
+                        Number(application.user.id) ===
+                        Number(currentUser.id)
+
+                        ||
+
+                        (
+                            application.user.emailId &&
+                            currentUser.emailId &&
+
+                            application.user.emailId
+                                .trim()
+                                .toLowerCase() ===
+                            currentUser.emailId
+                                .trim()
+                                .toLowerCase()
+                        );
+
+
+                    return sameUser &&
+                        application.status !== "WITHDRAWN";
+
+                })
+
+
+                // ================= SORT =================
+
+                .sort((a, b) => {
+
+                    const dateDifference =
+                        new Date(b.applicationDate) -
+                        new Date(a.applicationDate);
+
+
+                    if (dateDifference !== 0) {
+                        return dateDifference;
+                    }
+
+
+                    return b.id - a.id;
+
+                });
+
+
+        console.log(
+            "CURRENT USER:",
+            currentUser
+        );
+
+        console.log(
+            "MY APPLICATIONS:",
+            myApplications
+        );
 
 
         container.innerHTML = "";
 
+
+        // ================= NO APPLICATIONS =================
 
         if (myApplications.length === 0) {
 
@@ -156,6 +220,8 @@ async function loadApplications() {
         }
 
 
+        // ================= CREATE APPLICATION CARDS =================
+
         for (const application of myApplications) {
 
             const card =
@@ -176,333 +242,91 @@ async function loadApplications() {
                 "SUBMITTED";
 
 
-            // ================= GET DOCUMENTS =================
-
-            let documents = [];
-
-            try {
-
-                const documentResponse =
-                    await fetch(
-                        `http://localhost:8080/documents/application/${application.id}`,
-                        {
-                            credentials: "include"
-                        }
-                    );
-
-
-                if (documentResponse.ok) {
-
-                    documents =
-                        await documentResponse.json();
-
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "Unable to load documents:",
-                    error
-                );
-
-            }
-
-
-            // ================= DOCUMENT HTML =================
-
-            let documentHTML = "";
-
-
-            if (documents.length === 0) {
-
-                documentHTML = `
-            <p>
-                No documents uploaded.
-            </p>
-        `;
-
-            } else {
-
-                documents.forEach(function (document) {
-
-                    const verificationStatus =
-                        document.verificationStatus || "PENDING";
-
-                    documentHTML += `
-
-        <div class="application-document">
-
-            <div>
-
-                <strong>
-                    📄 ${document.documentType}
-                </strong>
-
-                <span class="document-status ${verificationStatus.toLowerCase()}">
-                    ${verificationStatus}
-                </span>
-
-            </div>
-
-            <a
-                href="http://localhost:8080/documents/${document.id}/file"
-                target="_blank"
-                class="view-pdf-btn">
-
-                View PDF
-
-            </a>
-
-        </div>
-
-    `;
-
-                });
-
-            }
-
-
             // ================= APPLICATION CARD =================
-            let bankDetails = null;
 
-            if (status === "APPROVED") {
-
-                try {
-
-                    const bankResponse =
-                        await fetch(
-                            "http://localhost:8080/bank-details/application/"
-                            + application.id,
-                            {
-                                credentials: "include"
-                            }
-                        );
-
-                    if (bankResponse.ok) {
-
-                        bankDetails =
-                            await bankResponse.json();
-
-                    }
-
-                } catch (error) {
-
-                    console.error(
-                        "Unable to load bank details:",
-                        error
-                    );
-
-                }
-
-            }
             card.innerHTML = `
 
-        <div class="application-card-header">
+                <div class="application-card-header">
 
-            <div>
+                    <div>
 
-                <p class="hero-tag">
-                    APPLICATION #${application.id}
-                </p>
+                        <p class="hero-tag">
+                            APPLICATION #${application.id}
+                        </p>
 
-                <h3>
-                    ${schemeName}
-                </h3>
+                        <h3>
+                            ${schemeName}
+                        </h3>
 
-            </div>
-
-
-            <span class="application-status ${status.toLowerCase()}">
-                ${status}
-            </span>
-
-        </div>
+                    </div>
 
 
-        <div class="application-details">
+                    <span class="
+                        application-status
+                        ${status.toLowerCase()}
+                    ">
+                        ${status}
+                    </span>
 
-            <div>
-
-                <small>
-                    Application Date
-                </small>
-
-                <strong>
-                    ${application.applicationDate}
-                </strong>
-
-            </div>
-
-        </div>
+                </div>
 
 
-      
+                <div class="application-details">
 
-            <!-- Uploaded Documents -->
-            
-            <div class="application-documents">
-            
-                <h4>Uploaded Documents</h4>
-            
-                ${documentHTML}
-            
-            </div>
-            <!-- BANK DETAILS -->
+                    <div>
 
-<!-- BANK DETAILS -->
+                        <small>
+                            Application Date
+                        </small>
 
-${
-                status === "APPROVED"
+                        <strong>
+                            ${application.applicationDate}
+                        </strong>
 
-                    ?
+                    </div>
 
-                    bankDetails
 
-                        ?
+                    <a
+                        href="application-details.html?applicationId=${application.id}"
+                        class="view-application-btn"
+                    >
+                        View Application →
+                    </a>
 
-                        bankDetails.verificationStatus === "REJECTED"
+                </div>
 
-                            ?
 
-                            `
-<div class="bank-status rejected">
-
-    <strong>
-        🏦 Bank Details: REJECTED
-    </strong>
-
-    <p>
-        Your bank details were rejected.
-        Please submit the correct bank details.
-    </p>
-
-    <button
-        class="btn login-btn bank-details-btn"
-        data-id="${application.id}">
-
-        🏦 Resubmit Bank Details
-
-    </button>
-
-</div>
-`
-
-                            :
-
-                            bankDetails.verificationStatus === "PENDING"
-
-                                ?
-
-                                `
-<div class="bank-status pending">
-
-    <strong>
-        🏦 Bank Details: PENDING
-    </strong>
-
-    <p>
-        Your bank details are under verification.
-    </p>
-
-</div>
-`
-
-                                :
-
-                                `
-<div class="bank-status verified">
-
-    <strong>
-        🏦 Bank Details: VERIFIED
-    </strong>
-
-    <p>
-        Your bank details have been verified.
-        Payment is being processed.
-    </p>
-
-</div>
-`
-
-                        :
-
-                        `
-<div class="bank-status no-bank">
-
-    <strong>
-        🏦 Bank Details Not Submitted
-    </strong>
-
-    <br><br>
-
-    <button
-        class="btn login-btn bank-details-btn"
-        data-id="${application.id}">
-
-        🏦 Submit Bank Details
-
-    </button>
-
-</div>
-`
-
-                    :
-
-                    ""
-            }
-        <!-- Withdraw -->
-
-        ${
+                ${
                 status === "SUBMITTED" ||
                 status === "PENDING"
 
                     ?
 
                     `
-            <div style="margin-top: 20px;">
+                    <div style="margin-top: 20px;">
 
-                <button
-                    class="btn login-btn withdraw-btn"
-                    data-id="${application.id}">
+                        <button
+                            class="btn login-btn withdraw-btn"
+                            data-id="${application.id}"
+                        >
+                            Withdraw Application
+                        </button>
 
-                    Withdraw Application
-
-                </button>
-
-            </div>
-            `
+                    </div>
+                    `
 
                     :
 
                     ""
             }
 
-    `;
+            `;
 
 
             // ================= ADD CARD =================
 
             container.appendChild(card);
-            const bankDetailsButton =
-                card.querySelector(".bank-details-btn");
 
-            if (bankDetailsButton) {
-
-                bankDetailsButton.addEventListener(
-                    "click",
-                    function () {
-
-                        const applicationId =
-                            this.dataset.id;
-
-                        window.location.href =
-                            "bank-details.html?applicationId="
-                            + applicationId;
-
-                    }
-                );
-
-            }
 
             // ================= WITHDRAW =================
 
@@ -548,6 +372,7 @@ ${
                                 let errorMessage =
                                     "Unable to withdraw application.";
 
+
                                 try {
 
                                     const error =
@@ -573,7 +398,8 @@ ${
                             );
 
 
-                            // Remove from screen
+                            // Remove card from screen
+
                             card.remove();
 
 
@@ -593,6 +419,7 @@ ${
             }
 
         }
+
 
     } catch (error) {
 
@@ -616,7 +443,6 @@ ${
     }
 
 }
-
 
 
 loadApplications();

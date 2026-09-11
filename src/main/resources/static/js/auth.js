@@ -58,17 +58,19 @@ loginForm.addEventListener("submit", async function (event) {
         if (response.ok) {
 
             const user = await response.json();
+
+            // Remove previous staff/admin login
+            localStorage.removeItem("staffEmail");
+            localStorage.removeItem("staffRole");
+
+            // Store normal user login
             localStorage.setItem("userEmail", user.email);
-            loginMessage.className = "message success";
-            loginMessage.textContent = "Login successful!";
 
-            console.log("Logged in user:", user);
+            window.location.href = "dashboard.html";
 
-            setTimeout(function () {
-                window.location.href = "dashboard.html";
-            }, 800);
+        }
 
-        } else {
+         else {
 
             let message = "Invalid email or password.";
 

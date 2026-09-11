@@ -1,7 +1,10 @@
 package com.example.DigitalSubsidy.service;
 
+import com.example.DigitalSubsidy.dto.EligibleSchemeDTO;
+import com.example.DigitalSubsidy.entity.GrantSlab;
 import com.example.DigitalSubsidy.entity.Scheme;
 import com.example.DigitalSubsidy.entity.User;
+import com.example.DigitalSubsidy.repository.GrantSlabRepo;
 import com.example.DigitalSubsidy.repository.SchemeRepo;
 import com.example.DigitalSubsidy.repository.userRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,118 +19,281 @@ public class SchemeService {
 
     @Autowired
     SchemeRepo schemerepo;
+
     @Autowired
     userRepo userrepo;
+
+    @Autowired
+    GrantSlabRepo grantslabrepo;
+
 
     public Scheme createScheme(Scheme scheme) {
         return schemerepo.save(scheme);
     }
 
+
     public List<Scheme> getAllSchemes() {
         return schemerepo.findAll();
     }
+
 
     public Scheme getSchemeById(Long id) {
         return schemerepo.findById(id).orElse(null);
     }
 
+
     public void deleteScheme(Long id) {
         schemerepo.deleteById(id);
     }
-    public List<Scheme> getEligibleSchemes(Long userId) {
 
-        User user = userrepo.findById(userId).orElse(null);
+    public List<EligibleSchemeDTO> getEligibleSchemes(Long userId) {
+
+        User user =
+                userrepo.findById(userId).orElse(null);
 
         if (user == null) {
             return List.of();
         }
 
-        LocalDate dob = user.getDateofbirth();
+
+        LocalDate dob =
+                user.getDateofbirth();
 
         int age =
-                Period.between(dob, LocalDate.now()).getYears();
+                Period.between(
+                        dob,
+                        LocalDate.now()
+                ).getYears();
+
 
         List<Scheme> schemes =
                 schemerepo.findAll();
 
+
         return schemes.stream()
 
+                // STATUS
+                .filter(scheme ->
+                        "ACTIVE".equalsIgnoreCase(
+                                scheme.getStatus()
+                        )
+                )
+
+
+                // AGE
+                .filter(scheme ->
+                        age >= scheme.getMinimumAge()
+                                &&
+                                age <= scheme.getMaximumAge()
+                )
+
+
+                // INCOME SLAB
+                // INCOME
                 .filter(scheme -> {
+
                     boolean result =
-                            "ACTIVE".equalsIgnoreCase(scheme.getStatus());
-
-                    System.out.println("STATUS: " + result);
-                    return result;
-                })
-
-                .filter(scheme -> {
-                    boolean result =
-                            age >= scheme.getMinimumAge() &&
-                                    age <= scheme.getMaximumAge();
-
+                            grantslabrepo
+                                    .findBySchemeIdAndMinimumIncomeLessThanEqualAndMaximumIncomeGreaterThanEqual(
+                                            scheme.getId(),
+                                            user.getAnnualIncome(),
+                                            user.getAnnualIncome()
+                                    )
+                                    .isPresent();
                     System.out.println(
                             "AGE = " + age +
-                                    " | Min = " + scheme.getMinimumAge() +
-                                    " | Max = " + scheme.getMaximumAge() +
-                                    " | Result = " + result
+                                    " | MIN = " + scheme.getMinimumAge() +
+                                    " | MAX = " + scheme.getMaximumAge()
                     );
-
-                    return result;
-                })
-
-                .filter(scheme -> {
-                    boolean result =
-                            user.getAnnualIncome() <=
-                                    scheme.getMaximumIncome();
+                    System.out.println(
+                            "OCCUPATION = " + user.getOccupation() +
+                                    " | SCHEME = " + scheme.getEligibleOccupation()
+                    );
 
                     System.out.println(
                             "INCOME = " + user.getAnnualIncome() +
-                                    " | Max = " + scheme.getMaximumIncome() +
-                                    " | Result = " + result
+                                    " | SCHEME ID = " + scheme.getId() +
+                                    " | RESULT = " + result
+                    );
+                    System.out.println(
+                            "CATEGORY = " + user.getBeneficiaryCategory() +
+                                    " | SCHEME CATEGORY = " +
+                                    scheme.getEligibleBeneficiaryCategory()
                     );
 
                     return result;
                 })
 
+                // OCCUPATION
                 .filter(scheme -> {
-                    boolean result =
-                            user.getOccupation().trim()
-                                    .equalsIgnoreCase(
-                                            scheme.getEligibleOccupation().trim()
-                                    );
 
-                    System.out.println(
-                            "USER OCCUPATION = " + user.getOccupation() +
-                                    " | SCHEME OCCUPATION = " +
-                                    scheme.getEligibleOccupation() +
-                                    " | Result = " + result
-                    );
+                    return user.getOccupation()
+                            .trim()
+                            .equalsIgnoreCase(
+                                    scheme.getEligibleOccupation()
+                                            .trim()
+                            );
 
-                    return result;
                 })
 
+
+                // BENEFICIARY CATEGORY
                 .filter(scheme -> {
 
-                    String schemeGender = scheme.getEligibleGender();
-                    String userGender = user.getGender();
+                    String schemeCategory =
+                            scheme.getEligibleBeneficiaryCategory();
 
-                    boolean result =
-                            schemeGender.equalsIgnoreCase("ALL") ||
-                                    schemeGender.trim()
-                                            .equalsIgnoreCase(userGender.trim());
+                    String userCategory =
+                            user.getBeneficiaryCategory();
 
-                    System.out.println(
-                            "USER GENDER = " + userGender +
-                                    " | SCHEME GENDER = " + schemeGender +
-                                    " | Result = " + result
+                    if (schemeCategory == null ||
+                            schemeCategory.trim().isEmpty()) {
+
+                        return true;
+                    }
+
+                    if (schemeCategory.equalsIgnoreCase("ALL")) {
+
+                        return true;
+                    }
+
+                    if (userCategory == null ||
+                            userCategory.trim().isEmpty()) {
+
+                        return false;
+                    }
+
+                    return schemeCategory
+                            .trim()
+                            .equalsIgnoreCase(
+                                    userCategory.trim()
+                            );
+
+                })
+
+
+                // GENDER
+                .filter(scheme -> {
+
+                    String schemeGender =
+                            scheme.getEligibleGender();
+
+                    String userGender =
+                            user.getGender();
+
+                    if (schemeGender == null ||
+                            schemeGender.trim().isEmpty()) {
+
+                        return true;
+                    }
+
+                    if (schemeGender.equalsIgnoreCase("ALL")) {
+
+                        return true;
+                    }
+
+                    if (userGender == null ||
+                            userGender.trim().isEmpty()) {
+
+                        return false;
+                    }
+
+                    return schemeGender
+                            .trim()
+                            .equalsIgnoreCase(
+                                    userGender.trim()
+                            );
+
+                })
+                .map(scheme -> {
+
+                    GrantSlab slab =
+                            grantslabrepo
+                                    .findBySchemeIdAndMinimumIncomeLessThanEqualAndMaximumIncomeGreaterThanEqual(
+                                            scheme.getId(),
+                                            user.getAnnualIncome(),
+                                            user.getAnnualIncome()
+                                    )
+                                    .orElse(null);
+
+
+                    // ================= ELIGIBILITY SCORE =================
+
+                    int score = 0;
+
+
+                    // Age
+                    if (age >= scheme.getMinimumAge()
+                            && age <= scheme.getMaximumAge()) {
+
+                        score += 20;
+                    }
+
+
+                    // Income
+                    if (slab != null) {
+
+                        score += 30;
+                    }
+
+
+                    // Occupation
+                    if (scheme.getEligibleOccupation() != null
+                            && user.getOccupation() != null
+                            && scheme.getEligibleOccupation()
+                            .trim()
+                            .equalsIgnoreCase(
+                                    user.getOccupation().trim()
+                            )) {
+
+                        score += 20;
+                    }
+
+
+                    // Gender
+                    String schemeGender =
+                            scheme.getEligibleGender();
+
+                    if (schemeGender == null
+                            || schemeGender.trim().isEmpty()
+                            || schemeGender.equalsIgnoreCase("ALL")
+                            || schemeGender.trim()
+                            .equalsIgnoreCase(
+                                    user.getGender().trim()
+                            )) {
+
+                        score += 10;
+                    }
+
+
+                    // Beneficiary Category
+                    String schemeCategory =
+                            scheme.getEligibleBeneficiaryCategory();
+
+                    if (schemeCategory == null
+                            || schemeCategory.trim().isEmpty()
+                            || schemeCategory.equalsIgnoreCase("ALL")
+                            || schemeCategory.trim()
+                            .equalsIgnoreCase(
+                                    user.getBeneficiaryCategory().trim()
+                            )) {
+
+                        score += 20;
+                    }
+
+
+                    return new EligibleSchemeDTO(
+                            scheme,
+                            slab,
+                            score
                     );
-
-                    return result;
-
                 })
 
                 .toList();
+
     }
+
+
     public Scheme updateScheme(
             Long id,
             Scheme updatedScheme) {
@@ -140,6 +306,7 @@ public class SchemeService {
                                 )
                         );
 
+
         scheme.setSchemeName(
                 updatedScheme.getSchemeName()
         );
@@ -148,20 +315,12 @@ public class SchemeService {
                 updatedScheme.getDescription()
         );
 
-        scheme.setMaximumAmount(
-                updatedScheme.getMaximumAmount()
-        );
-
         scheme.setMinimumAge(
                 updatedScheme.getMinimumAge()
         );
 
         scheme.setMaximumAge(
                 updatedScheme.getMaximumAge()
-        );
-
-        scheme.setMaximumIncome(
-                updatedScheme.getMaximumIncome()
         );
 
         scheme.setEligibleOccupation(
@@ -187,10 +346,17 @@ public class SchemeService {
         scheme.setStatus(
                 updatedScheme.getStatus()
         );
+
         scheme.setEligibleGender(
                 updatedScheme.getEligibleGender()
         );
 
+        scheme.setEligibleBeneficiaryCategory(
+                updatedScheme.getEligibleBeneficiaryCategory()
+        );
+
+
         return schemerepo.save(scheme);
     }
+
 }

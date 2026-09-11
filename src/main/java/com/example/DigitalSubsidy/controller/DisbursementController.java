@@ -18,8 +18,15 @@ public class DisbursementController {
     public Disbursement createDisbursement(
             @RequestBody Disbursement disbursement) {
 
+        System.out.println("DISBURSEMENT REQUEST RECEIVED");
+        System.out.println("Application ID: " +
+                disbursement.getApplication().getId());
+        System.out.println("Amount: " +
+                disbursement.getAmount());
+
         return service.createDisbursement(disbursement);
     }
+
 
     @GetMapping
     public List<Disbursement> getAllDisbursements() {

@@ -10,5 +10,7 @@ public interface BankDetailsRepo
 
     Optional<BankDetails>
     findByApplicationId(Long applicationId);
+    void deleteByApplicationId(Long applicationId);
+
 
 }

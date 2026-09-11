@@ -1,23 +1,11 @@
-const userEmail = localStorage.getItem("userEmail");
-
-const applicationCard =
-    document.querySelector(".auth-card");
-
-const params = new URLSearchParams(window.location.search);
-
-const schemeId = params.get("schemeId");
-
 const schemeName =
     document.getElementById("schemeName");
 
 const schemeDescription =
     document.getElementById("schemeDescription");
 
-const maximumAmount =
-    document.getElementById("maximumAmount");
-
-const maximumIncome =
-    document.getElementById("maximumIncome");
+const schemeBenefits =
+    document.getElementById("schemeBenefits");
 
 const ageLimit =
     document.getElementById("ageLimit");
@@ -31,92 +19,553 @@ const requiredDocuments =
 const applicationForm =
     document.getElementById("applicationForm");
 
-const applicationMessage =
-    document.getElementById("applicationMessage");
+const eligibleGrantMessage =
+    document.getElementById("eligibleGrantMessage");
+
+const grantSlabs =
+    document.getElementById("grantSlabs");
+
+const schemeId =
+    new URLSearchParams(window.location.search)
+        .get("schemeId");
+
+const userEmail =
+    localStorage.getItem("userEmail");
+
+let currentScheme = null;
+let currentUser = null;
 
 
-let selectedScheme;
+// ================= LOAD APPLICATION =================
 
-
-// ================= LOAD SCHEME =================
-
-async function loadScheme() {
+async function loadApplication() {
 
     try {
 
-        const response = await fetch(
-            `http://localhost:8080/schemes/${schemeId}`,
-            {
-                credentials: "include"
-            }
-        );
+        if (!userEmail) {
 
-        if (!response.ok) {
-            throw new Error("Unable to load scheme");
+            window.location.href =
+                "login.html";
+
+            return;
         }
 
-        selectedScheme = await response.json();
+
+        if (!schemeId) {
+
+            window.location.href =
+                "schemes.html";
+
+            return;
+        }
 
 
-        // Scheme details
+        // ================= GET USER =================
 
-        schemeName.textContent =
-            selectedScheme.schemeName;
+        const userResponse =
+            await fetch(
+                "http://localhost:8080/users",
+                {
+                    credentials: "include"
+                }
+            );
 
-        schemeDescription.textContent =
-            selectedScheme.description;
-        document.getElementById("schemeBenefits").textContent =
-            selectedScheme.benefits || "Benefits information not available.";
 
-        maximumAmount.textContent =
-            "₹" + selectedScheme.maximumAmount;
+        if (!userResponse.ok) {
 
-        maximumIncome.textContent =
-            "₹" + selectedScheme.maximumIncome;
+            throw new Error(
+                "Unable to load users"
+            );
+
+        }
+
+
+        const users =
+            await userResponse.json();
+
+
+        currentUser =
+            users.find(
+                user =>
+                    user.emailId &&
+                    userEmail &&
+                    user.emailId
+                        .trim()
+                        .toLowerCase() ===
+                    userEmail
+                        .trim()
+                        .toLowerCase()
+            );
+
+
+        if (!currentUser) {
+
+            window.location.href =
+                "profile.html";
+
+            return;
+        }
+
+
+        // ================= GET SCHEME =================
+
+        const schemeResponse =
+            await fetch(
+                `http://localhost:8080/schemes/${schemeId}`,
+                {
+                    credentials: "include"
+                }
+            );
+
+
+        if (!schemeResponse.ok) {
+
+            throw new Error(
+                "Unable to load scheme"
+            );
+
+        }
+
+
+        currentScheme =
+            await schemeResponse.json();
+
+
+        // ================= DISPLAY SCHEME =================
+
+        displayScheme();
+
+
+        // ================= GET ALL GRANT SLABS =================
+
+        const slabResponse =
+            await fetch(
+                `http://localhost:8080/grant-slabs/scheme/${schemeId}`,
+                {
+                    credentials: "include"
+                }
+            );
+
+
+        const slabs =
+            slabResponse.ok
+                ? await slabResponse.json()
+                : [];
+        displayGrantSlabs(slabs);
+
+
+
+        // ================= DISPLAY ALL GRANT SLABS =================
+
+
+
+
+        // ================= DISPLAY AGE & OCCUPATION =================
 
         ageLimit.textContent =
-            selectedScheme.minimumAge +
-            " - " +
-            selectedScheme.maximumAge;
+            `${currentScheme.minimumAge || "-"} - ${currentScheme.maximumAge || "-"}`;
+
 
         occupation.textContent =
-            selectedScheme.eligibleOccupation;
-        const eligible =
-            await checkEligibility();
+            currentScheme.eligibleOccupation || "ALL";
 
-        if (!eligible) {
+
+        // ================= CHECK OCCUPATION =================
+
+        const userOccupation =
+            currentUser.occupation
+                ? currentUser.occupation
+                    .trim()
+                    .toLowerCase()
+                : "";
+
+
+        const schemeOccupation =
+            currentScheme.eligibleOccupation
+                ? currentScheme.eligibleOccupation
+                    .trim()
+                    .toLowerCase()
+                : "";
+
+
+        /*
+         * Occupation is checked FIRST.
+         */
+
+        if (
+            schemeOccupation &&
+            schemeOccupation !== "all" &&
+            userOccupation !== schemeOccupation
+        ) {
+
+            showNotEligible(
+                "Occupation not eligible",
+                `This scheme is available only for ${currentScheme.eligibleOccupation}. Your occupation is ${currentUser.occupation || "not specified"}.`
+            );
+
             return;
         }
 
 
-        // ================= REQUIRED DOCUMENTS =================
+        // ================= CHECK AGE =================
 
-        requiredDocuments.innerHTML = "";
+        const userAge =
+            Number(currentUser.age);
 
 
-        if (!selectedScheme.requiredDocuments) {
+        const minimumAge =
+            Number(currentScheme.minimumAge);
 
-            requiredDocuments.innerHTML = `
+
+        const maximumAge =
+            Number(currentScheme.maximumAge);
+
+
+        if (
+            userAge &&
+            (
+                userAge < minimumAge ||
+                userAge > maximumAge
+            )
+        ) {
+
+            showNotEligible(
+                "Age not eligible",
+                `This scheme is available for applicants between ${minimumAge} and ${maximumAge} years. Your age is ${userAge}.`
+            );
+
+            return;
+        }
+
+
+        // ================= CHECK INCOME =================
+
+        const userIncome =
+            Number(
+                currentUser.annualIncome ||
+                currentUser.income ||
+                0
+            );
+
+
+        const matchingSlab =
+            slabs.find(
+                slab =>
+                    userIncome >= Number(slab.minimumIncome) &&
+                    userIncome <= Number(slab.maximumIncome)
+            );
+
+        displayGrantSlabs(slabs, matchingSlab);
+
+
+        if (!matchingSlab) {
+
+            showNotEligible(
+                "Income not eligible",
+                `Your annual income of ₹${userIncome.toLocaleString("en-IN")} does not fall within any eligible income range for this scheme.`
+            );
+
+            return;
+        }
+
+
+        // ================= ELIGIBLE =================
+
+        showEligibleApplication(
+            matchingSlab
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        document.querySelector(
+            ".apply-layout"
+        ).innerHTML = `
+
+            <div class="empty-state">
+
+                <h2>
+                    Unable to load application
+                </h2>
+
                 <p>
-                    No documents required.
+                    Please try again later.
                 </p>
-            `;
 
-            return;
-        }
+                <a
+                    href="schemes.html"
+                    class="auth-submit">
+                    Back to Schemes
+                </a>
+
+            </div>
+
+        `;
+    }
+}
 
 
-        const documents =
-            selectedScheme.requiredDocuments
-                .split(",")
-                .map(document => document.trim())
-                .filter(document => document !== "");
+// ================= DISPLAY SCHEME =================
+
+function displayScheme() {
+
+    schemeName.textContent =
+        currentScheme.schemeName || "Scheme";
 
 
-        documents.forEach(function (documentName) {
+    schemeDescription.textContent =
+        currentScheme.description ||
+        "Financial support for eligible beneficiaries.";
+
+
+    schemeBenefits.textContent =
+        currentScheme.benefits ||
+        currentScheme.description ||
+        "This scheme provides financial assistance to eligible beneficiaries.";
+}
+
+
+// ================= DISPLAY ALL GRANT SLABS =================
+function displayGrantSlabs(slabs, matchingSlab = null) {
+
+    if (!grantSlabs) {
+        return;
+    }
+
+    grantSlabs.innerHTML = "";
+
+    if (!slabs || slabs.length === 0) {
+
+        grantSlabs.innerHTML = `
+            <p class="no-grant-slab">
+                Grant details are not available.
+            </p>
+        `;
+
+        return;
+    }
+
+
+    slabs.forEach(function (slab) {
+
+        const slabCard =
+            document.createElement("div");
+
+
+        const isEligible =
+            matchingSlab &&
+            String(slab.id) === String(matchingSlab.id);
+
+
+        slabCard.className =
+            isEligible
+                ? "grant-slab-card eligible-slab"
+                : "grant-slab-card";
+
+
+        const minimumIncome =
+            Number(slab.minimumIncome || 0);
+
+        const maximumIncome =
+            Number(slab.maximumIncome || 0);
+
+        const grantAmount =
+            Number(slab.grantAmount || 0);
+
+
+        slabCard.innerHTML = `
+
+            <div class="slab-item">
+
+                <span>
+                    Income Range
+                </span>
+
+                <strong>
+                    ₹${minimumIncome.toLocaleString("en-IN")}
+                    -
+                    ₹${maximumIncome.toLocaleString("en-IN")}
+                </strong>
+
+            </div>
+
+
+            <div class="slab-item">
+
+                <span>
+                    Grant Amount
+                </span>
+
+                <strong>
+                    ₹${grantAmount.toLocaleString("en-IN")}
+                </strong>
+
+            </div>
+
+        `;
+
+
+        grantSlabs.appendChild(slabCard);
+
+    });
+}
+
+// ================= NOT ELIGIBLE =================
+
+function showNotEligible(title, reason) {
+
+    const applicationCard =
+        document.querySelector(".application-card");
+
+
+    if (!applicationCard) {
+        return;
+    }
+
+
+    applicationCard.innerHTML = `
+
+        <div class="not-eligible-card">
+
+            <div class="status-icon">
+                !
+            </div>
+
+
+            <p class="status-label">
+                APPLICATION STATUS
+            </p>
+
+
+            <h2>
+                Application Not Eligible
+            </h2>
+
+
+            <div class="eligibility-reason">
+
+                <strong>
+                    ${title}
+                </strong>
+
+                <p>
+                    ${reason}
+                </p>
+
+            </div>
+
+
+            <div class="not-eligible-action">
+
+                <a
+                    href="schemes.html"
+                    class="other-schemes-btn">
+
+                    View Other Schemes
+
+                </a>
+
+            </div>
+
+        </div>
+
+    `;
+}
+
+
+// ================= ELIGIBLE =================
+
+function showEligibleApplication(matchingSlab) {
+
+    if (!matchingSlab) {
+        return;
+    }
+
+
+    const eligibleAmount =
+        Number(matchingSlab.grantAmount || 0);
+
+
+    if (!eligibleGrantMessage) {
+        return;
+    }
+
+
+    eligibleGrantMessage.innerHTML = `
+
+        <div class="eligible-grant-box">
+
+            <span>
+                Your Eligible Grant Amount
+            </span>
+
+            <strong>
+                ₹${eligibleAmount.toLocaleString("en-IN")}
+            </strong>
+
+        </div>
+
+    `;
+
+
+    loadRequiredDocuments();
+}
+// ================= LOAD REQUIRED DOCUMENTS =================
+
+// ======================================================
+function loadRequiredDocuments() {
+
+    requiredDocuments.innerHTML = "";
+
+
+    if (!currentScheme.requiredDocuments) {
+
+        requiredDocuments.innerHTML = `
+
+            <div class="document-empty">
+
+                <span class="document-empty-icon">
+                    ✓
+                </span>
+
+                <div>
+                    <strong>No documents required</strong>
+
+                    <p>
+                        No documents are required for this scheme.
+                    </p>
+                </div>
+
+            </div>
+
+        `;
+
+        return;
+    }
+
+
+    const documents =
+        currentScheme.requiredDocuments
+            .split(",")
+            .map(
+                documentName =>
+                    documentName.trim()
+            )
+            .filter(
+                documentName =>
+                    documentName !== ""
+            );
+
+
+    documents.forEach(
+        function (documentName, index) {
 
             const documentDiv =
                 document.createElement("div");
+
 
             documentDiv.className =
                 "required-document";
@@ -124,45 +573,66 @@ async function loadScheme() {
 
             documentDiv.innerHTML = `
 
-                <label>
-                    ${documentName}
-                </label>
+                <div class="document-number">
+                   
+                </div>
 
-                <input
-                    type="file"
-                    class="document-file"
-                    data-document-type="${documentName}"
-                    accept=".pdf"
-                    required
-                >
+
+                <div class="document-content">
+
+                    <div class="document-title">
+
+                        <span class="document-icon">
+                            
+                        </span>
+
+                        <strong>
+                            ${documentName}
+                        </strong>
+
+                    </div>
+
+
+                    <p>
+                        Upload a clear PDF copy of this document.
+                    </p>
+
+
+                    <input
+                        type="file"
+                        class="document-file"
+                        data-document-type="${documentName}"
+                        accept=".pdf"   required              
+                    >
+
+                </div>
 
             `;
-
 
             requiredDocuments.appendChild(
                 documentDiv
             );
 
-        });
+        }
+    );
 
-
-    } catch (error) {
-
-        console.error(error);
-
-        schemeName.textContent =
-            "Unable to load scheme";
-
-        requiredDocuments.innerHTML = `
-            <p class="message error">
-                Unable to load required documents.
-            </p>
-        `;
-
-    }
 }
+// ================= LOGOUT =================
 
+document.getElementById("logoutBtn")
+    .addEventListener(
+        "click",
+        function () {
 
+            localStorage.removeItem(
+                "userEmail"
+            );
+
+            window.location.href =
+                "login.html";
+
+        }
+    );
 // ================= SUBMIT APPLICATION =================
 
 applicationForm.addEventListener(
@@ -170,85 +640,76 @@ applicationForm.addEventListener(
     async function (event) {
 
         event.preventDefault();
-        const confirmed = confirm(
-            "Are you sure you want to submit this application?"
-        );
-
-        if (!confirmed) {
-            return;
-        }
-
-        applicationMessage.className =
-            "message";
-
-        applicationMessage.textContent =
-            "Submitting application...";
 
 
-        try {
+        // ================= CHECK DOCUMENTS =================
 
-            // ================= GET LOGGED-IN USER =================
-
-            const userEmail =
-                localStorage.getItem("userEmail");
+        const fileInputs =
+            document.querySelectorAll(".document-file");
 
 
-            if (!userEmail) {
+        for (const input of fileInputs) {
 
-                window.location.href =
-                    "login.html";
+            if (!input.files || !input.files[0]) {
+
+                alert(
+                    "Please upload " +
+                    input.dataset.documentType
+                );
+
+                input.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
 
                 return;
             }
 
 
-            const userResponse =
-                await fetch(
-                    "http://localhost:8080/users",
-                    {
-                        credentials: "include"
-                    }
+            // PDF validation
+            const file =
+                input.files[0];
+
+            if (
+                file.type !== "application/pdf" &&
+                !file.name.toLowerCase().endsWith(".pdf")
+            ) {
+
+                alert(
+                    "Please upload a PDF file for " +
+                    input.dataset.documentType
                 );
 
+                input.value = "";
 
-            if (!userResponse.ok) {
+                input.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
 
-                throw new Error(
-                    "Unable to load user"
-                );
-
+                return;
             }
+        }
 
 
-            const users =
-                await userResponse.json();
+        // ================= CONFIRM =================
+
+        const confirmed =
+            confirm(
+                "Are you sure you want to submit this application?"
+            );
 
 
-            const currentUser =
-                users.find(
-                    user =>
-                        user.emailId &&
-                        user.emailId
-                            .trim()
-                            .toLowerCase() ===
-                        userEmail
-                            .trim()
-                            .toLowerCase()
-                );
+        if (!confirmed) {
+            return;
+        }
 
 
-            if (!currentUser) {
+        // ================= SUBMIT =================
 
-                throw new Error(
-                    "User profile not found"
-                );
+        try {
 
-            }
-
-
-            // ================= CREATE APPLICATION =================
-
-            const applicationResponse =
+            const response =
                 await fetch(
                     "http://localhost:8080/applications",
                     {
@@ -268,13 +729,8 @@ applicationForm.addEventListener(
                             },
 
                             scheme: {
-                                id: Number(schemeId)
+                                id: currentScheme.id
                             },
-
-                            applicationDate:
-                                new Date()
-                                    .toISOString()
-                                    .split("T")[0],
 
                             status: "SUBMITTED"
 
@@ -283,362 +739,68 @@ applicationForm.addEventListener(
                 );
 
 
-            if (!applicationResponse.ok) {
-
-                const error =
-                    await applicationResponse.json();
+            if (!response.ok) {
 
                 throw new Error(
-                    error.message ||
-                    "Application submission failed"
+                    "Unable to submit application"
                 );
-
             }
 
 
             const application =
-                await applicationResponse.json();
-
-
-            console.log(
-                "Application created:",
-                application
-            );
-
-
-            // ================= UPLOAD DOCUMENTS =================
-
+                await response.json();
             const fileInputs =
-                document.querySelectorAll(
-                    ".document-file"
-                );
-
+                document.querySelectorAll(".document-file");
 
             for (const input of fileInputs) {
 
-                const file =
-                    input.files[0];
+                const file = input.files[0];
 
-                const documentType =
-                    input.dataset.documentType;
+                const formData = new FormData();
 
-
-                if (!file) {
-
-                    throw new Error(
-                        "Please upload " +
-                        documentType
-                    );
-
-                }
-                const fileName =
-                    file.name.toLowerCase();
-
-                if (!fileName.endsWith(".pdf")) {
-
-                    throw new Error(
-                        documentType + " must be a PDF file."
-                    );
-                }
-
-
-                const formData =
-                    new FormData();
-
-
-                formData.append(
-                    "file",
-                    file
-                );
-
+                formData.append("file", file);
                 formData.append(
                     "documentType",
-                    documentType
+                    input.dataset.documentType
                 );
-
                 formData.append(
                     "applicationId",
                     application.id
                 );
 
-
-                const documentResponse =
-                    await fetch(
-                        "http://localhost:8080/documents/upload",
-                        {
-                            method: "POST",
-
-                            credentials: "include",
-
-                            body: formData
-                        }
-                    );
-
-
-                if (!documentResponse.ok) {
-
-                    throw new Error(
-                        "Failed to upload " +
-                        documentType
-                    );
-
-                }
-
-
-                const uploadedDocument =
-                    await documentResponse.json();
-
-
-                console.log(
-                    "Uploaded document:",
-                    uploadedDocument
+                await fetch(
+                    "http://localhost:8080/documents/upload",
+                    {
+                        method: "POST",
+                        credentials: "include",
+                        body: formData
+                    }
                 );
-
             }
 
 
             // ================= SUCCESS =================
 
-            applicationMessage.className =
-                "message success";
-
-            applicationMessage.textContent =
-                "Application and documents submitted successfully!";
+            alert(
+                "Application submitted successfully!"
+            );
 
 
-            setTimeout(function () {
-
-                window.location.href =
-                    "my-applications.html";
-
-            }, 1200);
+            window.location.href =
+                "my-applications.html";
 
 
         } catch (error) {
 
             console.error(error);
 
-            applicationMessage.className =
-                "message error";
-
-            applicationMessage.textContent =
-                error.message ||
-                "Unable to submit application.";
-
+            alert(
+                "Unable to submit application. Please try again."
+            );
         }
 
     }
 );
-
-
-// ================= LOGOUT =================
-
-const logoutBtn =
-    document.getElementById("logoutBtn");
-
-
-if (logoutBtn) {
-
-    logoutBtn.addEventListener(
-        "click",
-        function () {
-
-            localStorage.removeItem(
-                "userEmail"
-            );
-
-            window.location.href =
-                "login.html";
-
-        }
-    );
-
-}
-
-async function checkEligibility() {
-
-    if (!userEmail) {
-        window.location.href = "login.html";
-        return false;
-    }
-
-    try {
-
-        // Get logged-in user's profile
-        const userResponse = await fetch(
-            "http://localhost:8080/users",
-            {
-                credentials: "include"
-            }
-        );
-
-        if (!userResponse.ok) {
-            throw new Error("Unable to load user");
-        }
-
-        const users = await userResponse.json();
-
-        const currentUser = users.find(
-            user =>
-                user.emailId &&
-                user.emailId.trim().toLowerCase() ===
-                userEmail.trim().toLowerCase()
-        );
-
-        if (!currentUser) {
-
-            showNotEligible(
-                "Please complete your profile before applying."
-            );
-
-            return false;
-        }
-
-
-        // ================= SCHEME STATUS =================
-
-        if (selectedScheme.status !== "ACTIVE") {
-
-            showNotEligible(
-                "This scheme is currently not active."
-            );
-
-            return false;
-        }
-
-
-        // ================= SCHEME DATE =================
-
-        const today = new Date().toISOString().split("T")[0];
-
-        if (
-            today < selectedScheme.startDate ||
-            today > selectedScheme.endDate
-        ) {
-
-            showNotEligible(
-                "This scheme is currently outside its application period."
-            );
-
-            return false;
-        }
-
-
-        // ================= AGE =================
-
-        const birthDate =
-            new Date(currentUser.dateofbirth);
-
-        const todayDate = new Date();
-
-        let age =
-            todayDate.getFullYear() -
-            birthDate.getFullYear();
-
-        const month =
-            todayDate.getMonth() -
-            birthDate.getMonth();
-
-        if (
-            month < 0 ||
-            (month === 0 &&
-                todayDate.getDate() < birthDate.getDate())
-        ) {
-            age--;
-        }
-
-
-        if (
-            age < selectedScheme.minimumAge ||
-            age > selectedScheme.maximumAge
-        ) {
-
-            showNotEligible(
-                `Your age (${age}) does not meet the required age range of ${selectedScheme.minimumAge} - ${selectedScheme.maximumAge}.`
-            );
-
-            return false;
-        }
-
-
-        // ================= INCOME =================
-
-        if (
-            Number(currentUser.annualIncome) >
-            Number(selectedScheme.maximumIncome)
-        ) {
-
-            showNotEligible(
-                `Your annual income exceeds the maximum income limit of ₹${selectedScheme.maximumIncome}.`
-            );
-
-            return false;
-        }
-        // ================= LOCATION =================
-
-
-        // ================= OCCUPATION =================
-
-        if (
-            selectedScheme.eligibleOccupation &&
-            selectedScheme.eligibleOccupation
-                .toLowerCase() !==
-            currentUser.occupation
-                .toLowerCase()
-        ) {
-
-            showNotEligible(
-                `This scheme is available only for ${selectedScheme.eligibleOccupation}.`
-            );
-
-            return false;
-        }
-
-
-        // Everything is valid
-        return true;
-
-    } catch (error) {
-
-        console.error(error);
-
-        showNotEligible(
-            "Unable to verify your eligibility. Please try again."
-        );
-
-        return false;
-    }
-}
-function showNotEligible(reason) {
-
-    applicationCard.innerHTML = `
-
-        <div style="text-align:center; padding:30px;">
-
-            <div style="font-size:45px;">
-                ❌
-            </div>
-
-            <h2>
-                You are not eligible
-            </h2>
-
-            <p style="color:#64748b; margin:15px 0;">
-                ${reason}
-            </p>
-
-            <a
-                href="schemes.html"
-                class="btn primary-btn">
-
-                Back to Schemes
-
-            </a>
-
-        </div>
-
-    `;
-}
 // ================= START =================
 
-loadScheme();
+loadApplication();
