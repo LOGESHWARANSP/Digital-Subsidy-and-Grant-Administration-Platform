@@ -1,27 +1,39 @@
-const paymentsContainer =
-    document.getElementById("paymentsContainer");
+const staffEmail = localStorage.getItem("staffEmail");
+const staffRole = localStorage.getItem("staffRole");
 
-const staffEmail =
-    localStorage.getItem("staffEmail");
-
-const staffRole =
-    localStorage.getItem("staffRole");
-
-
-// ================= ADMIN LOGIN CHECK =================
-
-// ================= ADMIN / FINANCE OFFICER LOGIN CHECK =================
-
-// ================= NAVBAR ACCESS =================
-
-if (staffRole === "FINANCE_OFFICER") {
-    document
-        .querySelectorAll(".admin-only")
-        .forEach(item => {
-            item.style.display = "none";
-        });
+if (!staffEmail || !staffRole) {
+    window.location.href = "staff-login.html";
 }
 
+const staffNav = document.getElementById("staffNav");
+
+if (staffRole === "ADMIN") {
+
+    staffNav.innerHTML = `
+        <a href="admin-dashboard.html">Dashboard</a>
+        <a href="admin-schemes.html">Schemes</a>
+        <a href="admin-users.html">Users</a>
+        <a href="admin-applications.html">Applications</a>
+        <a href="officer-bank-details.html">Bank Details</a>
+        <a href="admin-payments.html" class="active">Payments</a>
+        <a href="admin-regional-allocation.html">Regional Allocation</a>
+    `;
+
+} else if (staffRole === "FINANCE_OFFICER") {
+
+    staffNav.innerHTML = `
+        <a href="officer-bank-details.html">Bank Details</a>
+        <a href="admin-payments.html" class="active">Payments</a>
+    `;
+}
+
+document.getElementById("staffEmail").textContent = staffEmail;
+document.getElementById("dropdownStaffEmail").textContent = staffEmail;
+
+document.getElementById("staffRoleText").textContent =
+    staffRole === "ADMIN"
+        ? "Administrator"
+        : "Finance Officer";
 
 // ================= LOAD PAYMENTS =================
 
@@ -58,11 +70,19 @@ async function loadPayments() {
         // ================= LOOP APPLICATIONS =================
 
         for (const application of applications) {
+            // Only eligible applications for payment management
 
+            const eligibleStatuses = [
+                "APPROVED",
+                "INSTALLMENT_1_PAID",
+                "UTILIZATION_PROOF_1_SUBMITTED",
+                "UTILIZATION_PROOF_1_VERIFIED",
+                "INSTALLMENT_2_PAID",
+                "UTILIZATION_PROOF_2_SUBMITTED",
+                "UTILIZATION_PROOF_2_VERIFIED"
+            ];
 
-            // Only APPROVED applications
-
-            if (application.status !== "APPROVED") {
+            if (!eligibleStatuses.includes(application.status)) {
                 continue;
             }
 

@@ -13,7 +13,60 @@ const staffRole =
 
 const staffEmail =
     localStorage.getItem("staffEmail");
+const staffNav =
+    document.getElementById("staffNav");
+// ================= PROFILE DROPDOWN =================
 
+const profileButton =
+    document.getElementById("profileButton");
+
+const profileDropdown =
+    document.getElementById("profileDropdown");
+
+profileButton.addEventListener("click", function (event) {
+
+    event.stopPropagation();
+
+    profileDropdown.classList.toggle("show");
+
+});
+
+// Close dropdown when clicking outside
+
+document.addEventListener("click", function () {
+
+    profileDropdown.classList.remove("show");
+
+});
+
+document.getElementById("staffEmail").textContent =
+    staffEmail;
+
+document.getElementById("dropdownStaffEmail").textContent =
+    staffEmail;
+
+document.getElementById("staffRoleText").textContent =
+    staffRole === "FIELD_OFFICER"
+        ? "Field Officer"
+        : "District Officer";
+
+
+if (staffRole === "FIELD_OFFICER") {
+
+    staffNav.innerHTML = `
+        <a href="field-officer.html" class="active">
+            Field Verification
+        </a>
+    `;
+
+} else if (staffRole === "DISTRICT_OFFICER") {
+
+    staffNav.innerHTML = `
+        <a href="district-officer.html" class="active">
+            District Verification
+        </a>
+    `;
+}
 if (!staffEmail || !staffRole) {
     window.location.href = "staff-login.html";
 }

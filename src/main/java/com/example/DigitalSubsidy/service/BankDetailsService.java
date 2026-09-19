@@ -36,12 +36,13 @@ public class BankDetailsService {
     GrantSlabRepo grantSlabRepo;
 
     // User submits bank details
+    // User submits bank details
+    @Transactional
     public BankDetails createBankDetails(
             BankDetails bankDetails) {
 
         Long applicationId =
                 bankDetails.getApplication().getId();
-
 
         Application application =
                 applicationRepo.findById(applicationId)
@@ -51,22 +52,15 @@ public class BankDetailsService {
                                 )
                         );
 
-
-        // Only approved application can submit bank details
-        if (!"DISTRICT_APPROVED".equals(application.getStatus())) {
-            throw new RuntimeException(
-                    "Bank details can be submitted only after district approval"
-            );
-        }
-
-
         BankDetails existingBankDetails =
                 bankDetailsRepo
                         .findByApplicationId(applicationId)
                         .orElse(null);
 
+        // =========================================
+        // EXISTING BANK DETAILS
+        // =========================================
 
-        // Bank details already exist
         if (existingBankDetails != null) {
 
             // Allow resubmission only after rejection
@@ -77,7 +71,6 @@ public class BankDetailsService {
                         "Bank details already submitted"
                 );
             }
-
 
             // Update rejected bank details
 
@@ -101,21 +94,43 @@ public class BankDetailsService {
                     bankDetails.getBranchName()
             );
 
-
             // Send again for officer verification
 
             existingBankDetails.setVerificationStatus(
                     "PENDING"
             );
 
+            // Update application status
+
+            application.setStatus(
+                    "BANK_DETAILS_SUBMITTED"
+            );
+
+            application.setStatusUpdatedDate(
+                    java.time.LocalDateTime.now()
+            );
+
+            applicationRepo.save(application);
 
             return bankDetailsRepo.save(
                     existingBankDetails
             );
         }
 
+        // =========================================
+        // FIRST TIME SUBMISSION
+        // =========================================
 
-        // First time submission
+        // Only district-approved application
+        // can submit bank details
+
+        if (!"DISTRICT_APPROVED".equals(
+                application.getStatus())) {
+
+            throw new RuntimeException(
+                    "Bank details can be submitted only after district approval"
+            );
+        }
 
         bankDetails.setApplication(application);
 
@@ -123,10 +138,24 @@ public class BankDetailsService {
                 "PENDING"
         );
 
+        // Save bank details
 
-        return bankDetailsRepo.save(
-                bankDetails
+        BankDetails savedBankDetails =
+                bankDetailsRepo.save(bankDetails);
+
+        // Update application status
+
+        application.setStatus(
+                "BANK_DETAILS_SUBMITTED"
         );
+
+        application.setStatusUpdatedDate(
+                java.time.LocalDateTime.now()
+        );
+
+        applicationRepo.save(application);
+
+        return savedBankDetails;
     }
     public List<BankDetails> getAllBankDetails() {
 
@@ -268,10 +297,10 @@ public class BankDetailsService {
     // Officer verifies bank details
 
     // Officer rejects bank details
+    @Transactional
     public BankDetails rejectBankDetails(
             Long id,
-            String reason
-    ) {
+            String reason) {
 
         BankDetails bankDetails =
                 bankDetailsRepo.findById(id)
@@ -281,25 +310,31 @@ public class BankDetailsService {
                                 )
                         );
 
-        bankDetails.setVerificationStatus(
-                "REJECTED"
-        );
+        // Reject bank details
+        bankDetails.setVerificationStatus("REJECTED");
 
         BankDetails savedBankDetails =
                 bankDetailsRepo.save(bankDetails);
 
-
+        // Get application
         Application application =
                 bankDetails.getApplication();
 
+        // Reset application status
+        application.setStatus("BANK_DETAILS_REJECTED");
 
-        // SEND REJECTION EMAIL
+        application.setStatusUpdatedDate(
+                java.time.LocalDateTime.now()
+        );
+
+        applicationRepo.save(application);
+
+        // Send rejection email
         emailService.sendBankDetailsRejectedEmail(
                 application.getUser().getEmailId(),
                 application.getUser().getFirstName(),
                 reason
         );
-
 
         return savedBankDetails;
     }

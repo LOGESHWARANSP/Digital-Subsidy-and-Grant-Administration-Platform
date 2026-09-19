@@ -63,42 +63,38 @@ staffLoginForm.addEventListener(
                     })
                 }
             );
-
-
             if (response.ok) {
 
                 const staff = await response.json();
 
-                // Remove normal user login
                 localStorage.removeItem("userEmail");
 
-                // Store staff login
                 localStorage.setItem("staffEmail", staff.email);
                 localStorage.setItem("staffRole", staff.role);
 
-                // Redirect based on role
+                staffMessage.className = "message success";
+                staffMessage.textContent = "Login successful!";
 
-                if (staff.role === "ADMIN") {
+                setTimeout(() => {
 
-                    window.location.href = "admin-dashboard.html";
+                    if (staff.role === "ADMIN") {
+                        window.location.href = "admin-dashboard.html";
+                    }
+                    else if (staff.role === "FIELD_OFFICER") {
+                        window.location.href = "field-officer.html";
+                    }
+                    else if (staff.role === "DISTRICT_OFFICER") {
+                        window.location.href = "district-officer.html";
+                    }
+                    else if (staff.role === "FINANCE_OFFICER") {
+                        window.location.href = "officer-bank-details.html";
+                    }
 
-                }
-                else if (staff.role === "FIELD_OFFICER") {
-
-                    window.location.href = "field-officer.html";
-
-                }
-                else if (staff.role === "DISTRICT_OFFICER") {
-
-                    window.location.href = "district-officer.html";
-
-                }
-                else if (staff.role === "FINANCE_OFFICER") {
-
-                    window.location.href = "officer-bank-details.html";
-
-                }
-
+                }, 800);
+            }
+            else {
+                staffMessage.className = "message error";
+                staffMessage.textContent = "Invalid email or password.";
             }
 
         }

@@ -56,18 +56,19 @@ loginForm.addEventListener("submit", async function (event) {
 
 
         if (response.ok) {
-
             const user = await response.json();
 
-            // Remove previous staff/admin login
             localStorage.removeItem("staffEmail");
             localStorage.removeItem("staffRole");
 
-            // Store normal user login
             localStorage.setItem("userEmail", user.email);
 
-            window.location.href = "dashboard.html";
+            loginMessage.className = "message success";
+            loginMessage.textContent = "Login successful!";
 
+            setTimeout(() => {
+                window.location.href = "dashboard.html";
+            }, 800);
         }
 
          else {

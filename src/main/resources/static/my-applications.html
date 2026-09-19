@@ -129,6 +129,182 @@
                 margin-left: auto;
             }
         }
+            /* ================= APPLICATION PROGRESS ================= */
+
+            .application-progress {
+                margin-top: 25px;
+                padding: 20px 10px;
+                overflow-x: auto;
+            }
+
+            .progress-track {
+                display: flex;
+                align-items: flex-start;
+                min-width: 950px;
+            }
+
+            .progress-step {
+                flex: 1;
+                text-align: center;
+                position: relative;
+            }
+
+            .progress-step:not(:last-child)::after {
+                content: "→";
+                position: absolute;
+                top: 3px;
+                right: -8px;
+                font-size: 18px;
+            }
+
+            .progress-icon {
+                font-size: 22px;
+                font-weight: bold;
+                margin-bottom: 8px;
+            }
+
+            .progress-step.completed .progress-icon {
+                color: #166534;
+            }
+
+            .progress-step.current .progress-icon {
+                color: #2563eb;
+            }
+
+            .progress-step.upcoming .progress-icon {
+                color: #9ca3af;
+            }
+
+            .progress-label {
+                font-size: 11px;
+                line-height: 1.4;
+                color: #475569;
+                padding: 0 5px;
+            }
+            /* ================= HORIZONTAL PROGRESS TRACKER ================= */
+
+            .application-progress {
+                margin-top: 28px;
+                padding: 20px 5px 10px;
+                overflow-x: auto;
+            }
+
+            .progress-track {
+                display: flex;
+                align-items: flex-start;
+                min-width: 1050px;
+            }
+
+            .progress-step {
+                flex: 1;
+                min-width: 80px;
+                text-align: center;
+                position: relative;
+            }
+
+            /* Connecting line */
+
+            .progress-step:not(:last-child)::after {
+                content: "";
+                position: absolute;
+                top: 18px;
+                left: 50%;
+                width: 100%;
+                height: 2px;
+                background: #d1d5db;
+                z-index: 0;
+            }
+
+            /* Circle */
+
+            .progress-icon {
+                width: 36px;
+                height: 36px;
+                margin: 0 auto 10px;
+
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                border-radius: 50%;
+                border: 2px solid #d1d5db;
+
+                background: #ffffff;
+                color: #9ca3af;
+
+                font-size: 18px;
+                font-weight: 700;
+
+                position: relative;
+                z-index: 1;
+            }
+
+            /* Completed step */
+
+            .progress-step.completed .progress-icon {
+                background: #16a34a;
+                border-color: #16a34a;
+                color: white;
+            }
+
+            .progress-step.completed:not(:last-child)::after {
+                background: #16a34a;
+            }
+
+            /* Current step */
+
+            .progress-step.current .progress-icon {
+                background: #2563eb;
+                border-color: #2563eb;
+                color: white;
+            }
+
+            /* Upcoming step */
+
+            .progress-step.upcoming .progress-icon {
+                background: #ffffff;
+                border-color: #d1d5db;
+                color: #9ca3af;
+            }
+
+            /* Step number */
+
+            .progress-number {
+                font-size: 11px;
+                font-weight: 700;
+                color: #64748b;
+                margin-bottom: 6px;
+            }
+
+            /* Stage label */
+
+            .progress-label {
+                font-size: 12px;
+                line-height: 1.5;
+                color: #334155;
+                max-width: 100px;
+                margin: auto;
+            }
+
+            /* Current stage label */
+
+            .progress-step.current .progress-label {
+                font-weight: 700;
+                color: #2563eb;
+            }
+
+            /* Mobile */
+
+            @media (max-width: 600px) {
+
+                .application-progress {
+                    padding-bottom: 15px;
+                }
+
+                .progress-track {
+                    min-width: 1050px;
+                }
+            }
     </style>
 
 </head>

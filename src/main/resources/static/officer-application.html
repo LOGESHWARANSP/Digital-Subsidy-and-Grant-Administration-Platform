@@ -648,6 +648,26 @@
             }
 
         }
+        .profile-menu {
+            position: relative;
+        }
+
+        .profile-dropdown {
+            display: none;
+            position: absolute;
+            top: 55px;
+            right: 0;
+            background: white;
+            min-width: 230px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            z-index: 1000;
+        }
+
+        .profile-dropdown.show {
+            display: block;
+        }
 
     </style>
 
@@ -668,19 +688,7 @@
     </div>
 
 
-    <nav>
-
-        <a href="officer-dashboard.html">
-            Applications
-        </a>
-
-        <a href="officer-bank-details.html"
-           class="bank-link">
-            🏦 Bank Verification
-        </a>
-
-    </nav>
-
+    <nav id="staffNav"></nav>
 
     <div class="profile-menu">
 
@@ -692,7 +700,7 @@
             </span>
 
             <span id="staffEmail">
-                Officer
+                Loading...
             </span>
 
             <span class="dropdown-arrow">
@@ -714,10 +722,10 @@
                 <div>
 
                     <strong id="dropdownStaffEmail">
-                        Officer
+                        Loading...
                     </strong>
 
-                    <small>
+                    <small id="staffRoleText">
                         Subsidy Officer
                     </small>
 

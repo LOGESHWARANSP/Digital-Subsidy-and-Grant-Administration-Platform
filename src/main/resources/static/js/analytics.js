@@ -177,12 +177,14 @@ async function loadAnalytics() {
 
         calculateSchemeWise(
             applications,
-            disbursements
+            disbursements,
+            allocations
         );
 
 
         calculateDisbursementSummary(
-            disbursements
+            disbursements,
+            applications
         );
 
 
@@ -299,8 +301,16 @@ function calculateOverall(
      * Existing project logic:
      * ₹10 lakhs allocated per state
      */
-    const totalBudget =
-        states.size * 1000000;
+    const totalBudget = allocations
+        .filter(allocation =>
+            selectedSchemeId === "ALL" ||
+            String(allocation.scheme?.id) === String(selectedSchemeId)
+        )
+        .reduce(
+            (sum, allocation) =>
+                sum + Number(allocation.allocatedBudget || 0),
+            0
+        );
 
 
     let totalDisbursed = 0;
@@ -463,47 +473,62 @@ function updateBudgetDonut(percentage) {
 
 // ================= APPLICATION STATUS =================
 
-function calculateApplicationStatus(
-    applications
-) {
+function calculateApplicationStatus(applications) {
 
     let approved = 0;
     let pending = 0;
     let review = 0;
     let rejected = 0;
 
-
     applications.forEach(application => {
 
+        // Scheme filter
         if (
             selectedSchemeId !== "ALL" &&
-            String(application.scheme?.id)
-            !== String(selectedSchemeId)
+            String(application.scheme?.id) !==
+            String(selectedSchemeId)
         ) {
             return;
         }
 
+        const status = application.status || "";
 
-        const status =
-            application.status;
+        // ================= REJECTED =================
 
-
-        if (status === "APPROVED") {
-            approved++;
-        }
-
-        else if (
-            status === "REJECTED"
+        if (
+            status === "REJECTED" ||
+            status.includes("REJECTED")
         ) {
             rejected++;
         }
 
+        // ================= APPROVED / COMPLETED =================
+
+        else if (
+            status === "APPROVED" ||
+            status === "INSTALLMENT_1_PAID" ||
+            status === "UTILIZATION_PROOF_1_SUBMITTED" ||
+            status === "UTILIZATION_PROOF_1_VERIFIED" ||
+            status === "INSTALLMENT_2_PAID" ||
+            status === "UTILIZATION_PROOF_2_SUBMITTED" ||
+            status === "UTILIZATION_PROOF_2_VERIFIED" ||
+            status === "DISBURSED"
+        ) {
+            approved++;
+        }
+
+        // ================= UNDER REVIEW =================
+
         else if (
             status === "FIELD_VERIFIED" ||
-            status === "DISTRICT_APPROVED"
+            status === "DISTRICT_APPROVED" ||
+            status === "BANK_DETAILS_SUBMITTED" ||
+            status === "BANK_DETAILS_VERIFIED"
         ) {
             review++;
         }
+
+        // ================= PENDING =================
 
         else {
             pending++;
@@ -519,25 +544,23 @@ function calculateApplicationStatus(
         rejected;
 
 
+    // ================= UPDATE UI =================
+
     document.getElementById(
         "statusTotal"
     ).textContent = total;
-
 
     document.getElementById(
         "approvedCount"
     ).textContent = approved;
 
-
     document.getElementById(
         "pendingCount"
     ).textContent = pending;
 
-
     document.getElementById(
         "reviewCount"
     ).textContent = review;
-
 
     document.getElementById(
         "rejectedCount"
@@ -553,7 +576,6 @@ function calculateApplicationStatus(
     );
 
 }
-
 
 // ================= STATUS DONUT =================
 
@@ -641,8 +663,8 @@ function calculateStateWise(
         }
 
 
-        stateData[state].allocated =
-            1000000;
+        stateData[state].allocated +=
+            Number(allocation.allocatedBudget || 0);
 
     });
 
@@ -872,34 +894,54 @@ if (stateShowMoreBtn) {
 let showAllSchemes = false;
 let currentSchemeData = {};
 
-function calculateSchemeWise(applications, disbursements) {
-
+function calculateSchemeWise(
+    applications,
+    disbursements,
+    allocations
+) {
     const schemeData = {};
 
-    // Create application lookup
-    const applicationMap = {};
+    // ================= ALLOCATION =================
+    allocations.forEach(allocation => {
 
-    applications.forEach(application => {
-        applicationMap[application.id] = application;
+        if (
+            selectedSchemeId !== "ALL" &&
+            String(allocation.scheme?.id) !==
+            String(selectedSchemeId)
+        ) {
+            return;
+        }
+
+        const schemeName =
+            allocation.scheme?.schemeName ||
+            allocation.schemeName ||
+            "Unknown Scheme";
+
+        if (!schemeData[schemeName]) {
+            schemeData[schemeName] = {
+                allocated: 0,
+                disbursed: 0
+            };
+        }
+
+        schemeData[schemeName].allocated +=
+            Number(allocation.allocatedBudget || 0);
     });
 
+    // ================= DISBURSEMENT =================
     disbursements.forEach(disbursement => {
 
         if (disbursement.paymentStatus !== "PAID") {
             return;
         }
 
-        const applicationId =
-            disbursement.application?.id;
-
         const application =
-            applicationMap[applicationId];
+            disbursement.application;
 
         if (!application || !application.scheme) {
             return;
         }
 
-        // Scheme filter
         if (
             selectedSchemeId !== "ALL" &&
             String(application.scheme.id) !==
@@ -913,10 +955,13 @@ function calculateSchemeWise(applications, disbursements) {
             "Unknown Scheme";
 
         if (!schemeData[schemeName]) {
-            schemeData[schemeName] = 0;
+            schemeData[schemeName] = {
+                allocated: 0,
+                disbursed: 0
+            };
         }
 
-        schemeData[schemeName] +=
+        schemeData[schemeName].disbursed +=
             Number(disbursement.amount || 0);
     });
 
@@ -924,8 +969,6 @@ function calculateSchemeWise(applications, disbursements) {
 
     renderSchemeTable();
 }
-
-
 function renderSchemeTable() {
 
     const container =
@@ -945,16 +988,12 @@ function renderSchemeTable() {
             ? entries
             : entries.slice(0, 5);
 
-    const maxAmount =
-        Math.max(
-            ...Object.values(currentSchemeData),
-            1
-        );
-
-    visibleEntries.forEach(([scheme, amount]) => {
+    visibleEntries.forEach(([scheme, data]) => {
 
         const percentage =
-            (amount / maxAmount) * 100;
+            data.allocated > 0
+                ? (data.disbursed / data.allocated) * 100
+                : 0;
 
         const row =
             document.createElement("div");
@@ -964,17 +1003,25 @@ function renderSchemeTable() {
         row.innerHTML = `
             <div class="scheme-top">
                 <span>${scheme}</span>
-                <strong>${formatCurrency(amount)}</strong>
+
+                <strong>
+                    ${formatCurrency(data.disbursed)}
+                </strong>
             </div>
 
             <div class="scheme-progress">
-                <div style="width:${percentage}%"></div>
+                <div style="
+                    width:${Math.min(percentage, 100)}%;
+                "></div>
             </div>
+
+            <small>
+                ${percentage.toFixed(1)}% utilized
+            </small>
         `;
 
         container.appendChild(row);
     });
-
 
     if (entries.length === 0) {
 
@@ -984,7 +1031,6 @@ function renderSchemeTable() {
             </div>
         `;
     }
-
 
     const button =
         document.getElementById("schemeShowMoreBtn");
@@ -1007,58 +1053,91 @@ function renderSchemeTable() {
         button.style.display = "none";
     }
 }
+// Scheme Show More / Show Less
+document.addEventListener("click", function (event) {
 
+    const button =
+        event.target.closest("#schemeShowMoreBtn");
 
-// Show More / Show Less
+    if (!button) {
+        return;
+    }
 
-const schemeShowMoreBtn =
-    document.getElementById("schemeShowMoreBtn");
+    showAllSchemes = !showAllSchemes;
 
-if (schemeShowMoreBtn) {
+    renderSchemeTable();
 
-    schemeShowMoreBtn.addEventListener(
-        "click",
-        function () {
+});
 
-            showAllSchemes =
-                !showAllSchemes;
-
-            renderSchemeTable();
-        }
-    );
-}
-// ================= DISBURSEMENT =================
+// ================= DISBURSEMENT SUMMARY =================
 
 function calculateDisbursementSummary(
-    disbursements
+    disbursements,
+    applications
 ) {
-
     let paid = 0;
     let amount = 0;
     let pending = 0;
 
+    // ================= PAID DISBURSEMENTS =================
 
     disbursements.forEach(disbursement => {
 
-        if (
-            disbursement.paymentStatus === "PAID"
-        ) {
+        if (disbursement.paymentStatus === "PAID") {
 
             paid++;
 
-            amount +=
-                Number(
-                    disbursement.amount || 0
-                );
+            amount += Number(
+                disbursement.amount || 0
+            );
 
         } else {
 
+            // Pending payment records
             pending++;
 
         }
 
     });
 
+
+    // ================= PENDING INSTALLMENTS =================
+
+    applications.forEach(application => {
+
+        // Apply scheme filter
+        if (
+            selectedSchemeId !== "ALL" &&
+            String(application.scheme?.id) !==
+            String(selectedSchemeId)
+        ) {
+            return;
+        }
+
+        const installmentPlans =
+            application.installmentPlans || [];
+
+        installmentPlans.forEach(installment => {
+
+            /*
+             * AVAILABLE means payment is ready
+             * LOCKED means it is not yet available
+             */
+
+            if (
+                installment.status === "AVAILABLE"
+            ) {
+
+                pending++;
+
+            }
+
+        });
+
+    });
+
+
+    // ================= UPDATE UI =================
 
     document.getElementById(
         "totalDisbursements"
@@ -1151,10 +1230,15 @@ function calculateCompliance(
 
 
 // ================= CATEGORY =================
-
 function calculateCategory(applications) {
 
-    const categoryData = {};
+    const categoryData = {
+        OC: 0,
+        BC: 0,
+        MBC: 0,
+        SC: 0,
+        ST: 0,
+    };
 
     applications.forEach(application => {
 
@@ -1164,22 +1248,19 @@ function calculateCategory(applications) {
 
         if (
             selectedSchemeId !== "ALL" &&
-            String(application.scheme?.id)
-            !== String(selectedSchemeId)
+            String(application.scheme?.id) !== String(selectedSchemeId)
         ) {
             return;
         }
 
         const category =
-            application.user.beneficiaryCategory ||
-            "Unknown";
+            application.user.beneficiaryCategory || "Unknown";
 
         if (!categoryData[category]) {
             categoryData[category] = 0;
         }
 
         categoryData[category]++;
-
     });
 
 
@@ -1187,32 +1268,26 @@ function calculateCategory(applications) {
     const values = Object.values(categoryData);
 
 
-    const canvas =
-        document.getElementById("categoryChart");
-
+    const canvas = document.getElementById("categoryChart");
     const ctx = canvas.getContext("2d");
 
 
     // Clear previous chart
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 
     const width = canvas.parentElement.clientWidth;
-    const height = 190;
+    const height = 220;
 
     canvas.width = width;
     canvas.height = height;
-    console.log(categoryData);
 
 
     if (labels.length === 0) {
 
+        ctx.fillStyle = "#64748b";
         ctx.font = "14px Arial";
+
         ctx.fillText(
             "No application data",
             20,
@@ -1223,70 +1298,42 @@ function calculateCategory(applications) {
     }
 
 
-    const maxValue =
-        Math.max(...values, 1);
+    console.log(categoryData);
 
 
-    const paddingLeft = 45;
-    const paddingBottom = 20;
-    const paddingTop = 15;
-    const paddingRight = 20;
+    const maxValue = Math.max(...values, 1);
+
+
+    // Chart spacing
+    const paddingLeft = 55;
+    const paddingRight = 25;
+    const paddingTop = 20;
+    const paddingBottom = 40;
 
 
     const chartWidth =
-        width -
-        paddingLeft -
-        paddingRight;
+        width - paddingLeft - paddingRight;
 
     const chartHeight =
-        height -
-        paddingTop -
-        paddingBottom;
+        height - paddingTop - paddingBottom;
 
 
-    const barGap = 20;
+    // Bar gap
+    const barGap = 35;
 
     const barWidth =
         (chartWidth -
-            (barGap * (labels.length - 1)))
+            barGap * (labels.length - 1))
         / labels.length;
 
 
-    // Y axis
-    ctx.beginPath();
+    /*
+     * -------------------------
+     * Y AXIS + GRID
+     * -------------------------
+     */
 
-    ctx.moveTo(
-        paddingLeft,
-        paddingTop
-    );
-
-    ctx.lineTo(
-        paddingLeft,
-        height - paddingBottom
-    );
-
-    ctx.strokeStyle = "#cbd5e1";
-    ctx.stroke();
-
-
-    // X axis
-    ctx.beginPath();
-
-    ctx.moveTo(
-        paddingLeft,
-        height - paddingBottom
-    );
-
-    ctx.lineTo(
-        width - paddingRight,
-        height - paddingBottom
-    );
-
-    ctx.stroke();
-
-
-    // Y axis values
-    const steps = 4;
+    const steps = Math.max(maxValue, 4);
 
 
     for (let i = 0; i <= steps; i++) {
@@ -1299,18 +1346,7 @@ function calculateCategory(applications) {
         const y =
             height -
             paddingBottom -
-            (value / maxValue) *
-            chartHeight;
-
-
-        ctx.fillStyle = "#64748b";
-        ctx.font = "11px Arial";
-
-        ctx.fillText(
-            value,
-            10,
-            y + 4
-        );
+            (value / maxValue) * chartHeight;
 
 
         // Grid line
@@ -1327,91 +1363,104 @@ function calculateCategory(applications) {
         );
 
         ctx.strokeStyle = "#eef2f7";
+        ctx.lineWidth = 1;
 
         ctx.stroke();
 
+
+        // Y value
+        ctx.fillStyle = "#64748b";
+        ctx.font = "11px Arial";
+        ctx.textAlign = "right";
+
+        ctx.fillText(
+            value,
+            paddingLeft - 10,
+            y + 4
+        );
     }
 
 
-    // Bars
-    labels.forEach(
-        (label, index) => {
+    /*
+     * -------------------------
+     * BARS
+     * -------------------------
+     */
 
-            const value =
-                values[index];
+    labels.forEach((label, index) => {
 
-
-            const barHeight =
-                (value / maxValue) *
-                chartHeight;
+        const value = values[index];
 
 
-            const x =
-                paddingLeft +
-                index *
-                (barWidth + barGap);
+        const barHeight =
+            (value / maxValue) * chartHeight;
 
 
-            const y =
-                height -
-                paddingBottom -
-                barHeight;
+        const x =
+            paddingLeft +
+            index * (barWidth + barGap);
 
 
-            // Bar
-            ctx.fillStyle =
-                "#2563eb";
-
-            ctx.beginPath();
-
-            ctx.roundRect(
-                x,
-                y,
-                barWidth,
-                barHeight,
-                5
-            );
-
-            ctx.fill();
+        const y =
+            height -
+            paddingBottom -
+            barHeight;
 
 
-            // Value above bar
-            ctx.fillStyle =
-                "#0f172a";
+        /*
+         * Bar
+         */
 
-            ctx.font =
-                "bold 12px Arial";
+        ctx.fillStyle = "#2563eb";
 
-            ctx.textAlign =
-                "center";
+        ctx.beginPath();
 
-            ctx.fillText(
-                value,
-                x + barWidth / 2,
-                Math.max(y - 7, 15)
-            );
+        ctx.roundRect(
+            x,
+            y,
+            barWidth,
+            barHeight,
+            6
+        );
 
-
-            // Category name
-            ctx.fillStyle =
-                "#475569";
-
-            ctx.font =
-                "12px Arial";
+        ctx.fill();
 
 
-            ctx.fillText(
-                label,
-                x + barWidth / 2,
-                height - 20
-            );
+        /*
+         * Value
+         */
 
-        }
-    );
+        ctx.fillStyle = "#0f172a";
+
+        ctx.font = "bold 13px Arial";
+
+        ctx.textAlign = "center";
+
+        ctx.fillText(
+            value,
+            x + barWidth / 2,
+            Math.max(y - 8, 14)
+        );
+
+
+        /*
+         * Category
+         */
+
+        ctx.fillStyle = "#475569";
+
+        ctx.font = "bold 12px Arial";
+
+        ctx.fillText(
+            label,
+            x + barWidth / 2,
+            height - 15
+        );
+
+    });
 
 
     ctx.textAlign = "left";
-
 }
 function updateLastUpdated() {
     const element = document.getElementById("lastUpdated");
@@ -1426,23 +1475,45 @@ function updateLastUpdated() {
 
 function downloadPDF() {
 
-    const element = document.querySelector(".analytics-page");
+    const element =
+        document.querySelector(".analytics-page");
 
     const options = {
-        margin: 10,
-        filename: "digital-subsidy-analytics.pdf",
+        margin: 8,
+
+        filename:
+            "digital-subsidy-analytics.pdf",
+
         image: {
             type: "jpeg",
-            quality: 0.98
+            quality: 1
         },
+
         html2canvas: {
-            scale: 2,
-            useCORS: true
+            scale: 3,
+            useCORS: true,
+            allowTaint: false,
+            logging: false,
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: element.scrollWidth
         },
+
         jsPDF: {
             unit: "mm",
             format: "a4",
-            orientation: "portrait"
+            orientation: "landscape"
+        },
+
+        pagebreak: {
+            mode: [
+                "css",
+                "legacy"
+            ],
+            avoid: [
+                ".analytics-card",
+                ".chart-container"
+            ]
         }
     };
 

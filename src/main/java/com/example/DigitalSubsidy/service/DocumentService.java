@@ -171,7 +171,26 @@ public class DocumentService {
                     savedDocument.getDocumentPath()
             );
 
-            milestone.setStatus("SUBMITTED");
+            milestone.setStatus("COMPLETED");
+
+            milestone.setCompletedDate(LocalDate.now());
+
+// Update application progress status
+            Application application =
+                    document.getApplication();
+
+            if (installmentNumber == 1) {
+
+                application.setStatus("UTILIZATION_PROOF_1_VERIFIED");
+
+            } else if (installmentNumber == 2) {
+
+                application.setStatus("UTILIZATION_PROOF_2_VERIFIED");
+            }
+
+            application.setStatusUpdatedDate(LocalDateTime.now());
+
+            applicationRepo.save(application);
 
             complianceMilestoneRepo.save(milestone);
 
@@ -286,11 +305,27 @@ public class DocumentService {
             milestone.setStatus("REJECTED");
 
             complianceMilestoneRepo.save(milestone);
-
-
-            // Send rejection email
             Application application =
                     document.getApplication();
+
+            if (installmentNumber == 1) {
+
+                application.setStatus(
+                        "UTILIZATION_PROOF_1_REJECTED"
+                );
+
+            } else if (installmentNumber == 2) {
+
+                application.setStatus(
+                        "UTILIZATION_PROOF_2_REJECTED"
+                );
+            }
+
+            application.setStatusUpdatedDate(
+                    LocalDateTime.now()
+            );
+
+            applicationRepo.save(application);
 
             User user =
                     application.getUser();
@@ -485,6 +520,21 @@ public class DocumentService {
         complianceMilestoneRepo.save(
                 milestone
         );
+        Integer installmentNumber =
+                milestone.getInstallmentNumber();
+
+        if (installmentNumber == 1) {
+
+            application.setStatus("UTILIZATION_PROOF_1_SUBMITTED");
+
+        } else if (installmentNumber == 2) {
+
+            application.setStatus("UTILIZATION_PROOF_2_SUBMITTED");
+        }
+
+        application.setStatusUpdatedDate(LocalDateTime.now());
+
+        applicationRepo.save(application);
 
 
         // ========================================================

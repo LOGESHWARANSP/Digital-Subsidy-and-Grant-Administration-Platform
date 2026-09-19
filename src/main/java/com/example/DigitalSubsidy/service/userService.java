@@ -119,11 +119,6 @@ public class userService {
             user.setBeneficiaryCategory(
                     updatedUser.getBeneficiaryCategory()
             );
-            user.setGender(updatedUser.getGender());
-
-            user.setBeneficiaryCategory(
-                    updatedUser.getBeneficiaryCategory()
-            );
             return userrepo.save(user);
         }
                 return null;

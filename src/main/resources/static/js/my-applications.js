@@ -21,8 +21,132 @@ if (navUserEmail) {
 if (dropdownEmail) {
     dropdownEmail.textContent = userEmail;
 }
+// ================= APPLICATION PROGRESS =================
 
+function getProgressSteps(status) {
 
+    const stages = [
+        "Application Submitted",
+        "Field Officer Verified",
+        "District Officer Verified",
+        "Bank Details Submitted",
+        "Bank Details Verified",
+        "Application Approved",
+        "Installment 1 Paid",
+        "Utilization Proof 1 Submitted",
+        "Utilization Proof 1 Verified",
+        "Installment 2 Paid",
+        "Utilization Proof 2 Submitted",
+        "Utilization Proof 2 Verified",
+        "Disbursed"
+    ];
+
+    const statusStageMap = {
+
+        "SUBMITTED": 0,
+        "FIELD_VERIFIED": 1,
+        "DISTRICT_APPROVED": 2,
+
+        "BANK_DETAILS_SUBMITTED": 3,
+
+        // Bank details rejected → Step 4 current
+        "BANK_DETAILS_REJECTED": 2,
+        "BANK_REJECTED": 2,
+
+        "BANK_VERIFIED": 4,
+        "APPROVED": 5,
+
+        "INSTALLMENT_1_PAID": 6,
+
+        "UTILIZATION_PROOF_1_SUBMITTED": 7,
+
+        // Proof 1 rejected → Step 8 current
+        "UTILIZATION_PROOF_1_REJECTED": 6,
+
+        "UTILIZATION_PROOF_1_VERIFIED": 8,
+
+        "INSTALLMENT_2_PAID": 9,
+
+        "UTILIZATION_PROOF_2_SUBMITTED": 10,
+
+        // Proof 2 rejected → Step 11 current
+        "UTILIZATION_PROOF_2_REJECTED": 9,
+
+        "UTILIZATION_PROOF_2_VERIFIED": 11,
+
+        "DISBURSED": 12
+
+    };
+
+    let currentStage;
+
+    if (status === "DISBURSED") {
+
+        // All stages completed
+        currentStage = stages.length;
+
+    } else {
+
+        // Current status completed
+        // Next step becomes current
+        currentStage =
+            (statusStageMap[status] ?? 0) + 1;
+
+    }
+
+    return `
+        <div class="application-progress">
+
+            <div class="progress-track">
+
+                ${stages.map((stage, index) => {
+
+        let stepClass = "upcoming";
+        let symbol = index + 1;
+
+        if (index < currentStage) {
+
+            stepClass = "completed";
+            symbol = "✓";
+
+        } else if (index === currentStage) {
+
+            stepClass = "current";
+            symbol = index + 1;
+
+        } else {
+
+            stepClass = "upcoming";
+            symbol = index + 1;
+
+        }
+
+        return `
+            <div class="progress-step ${stepClass}">
+
+                <div class="progress-icon">
+                    ${symbol}
+                </div>
+
+                <div class="progress-number">
+                    ${index + 1}
+                </div>
+
+                <div class="progress-label">
+                    ${stage}
+                </div>
+
+            </div>
+        `;
+
+    }).join("")}
+
+            </div>
+
+        </div>
+    `;
+
+}
 async function loadApplications() {
 
     if (!userEmail) {
@@ -240,6 +364,8 @@ async function loadApplications() {
             const status =
                 application.status ||
                 "SUBMITTED";
+            console.log("Application ID:", application.id);
+            console.log("Application Status:", application.status);
 
 
             // ================= APPLICATION CARD =================
@@ -294,6 +420,7 @@ async function loadApplications() {
                     </a>
 
                 </div>
+                ${getProgressSteps(status)}
 
 
                 ${

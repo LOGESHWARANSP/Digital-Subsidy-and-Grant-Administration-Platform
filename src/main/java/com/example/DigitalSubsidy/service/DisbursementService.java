@@ -12,14 +12,16 @@ public class DisbursementService {
 
     @Autowired
     DisbursementRepo repository;
+
     @Autowired
     ApplicationRepo applicationrepo;
+
     @Autowired
     BankDetailsRepo bankDetailsRepo;
+
     @Autowired
     EmailService emailService;
-    @Autowired
-    RegionalAllocationRepo regionalAllocationRepo;
+
     @Autowired
     InstallmentPlanRepo installmentPlanRepo;
 
@@ -28,13 +30,17 @@ public class DisbursementService {
         return repository.findAll();
     }
 
+
     public Disbursement getDisbursementById(Long id) {
         return repository.findById(id).orElse(null);
     }
 
+
     public void deleteDisbursement(Long id) {
         repository.deleteById(id);
     }
+
+
     public Disbursement createDisbursement(
             Disbursement disbursement) {
 
@@ -54,10 +60,20 @@ public class DisbursementService {
 
         // Application must be approved
 
-        if (!"APPROVED".equals(application.getStatus())) {
+        String applicationStatus =
+                application.getStatus();
+
+        boolean validStatus =
+                "APPROVED".equals(applicationStatus)
+                        || "INSTALLMENT_1_PAID".equals(applicationStatus)
+                        || "UTILIZATION_PROOF_1_VERIFIED".equals(applicationStatus)
+                        || "INSTALLMENT_2_PAID".equals(applicationStatus)
+                        || "UTILIZATION_PROOF_2_VERIFIED".equals(applicationStatus);
+
+        if (!validStatus) {
 
             throw new RuntimeException(
-                    "Disbursement allowed only for approved applications"
+                    "Disbursement allowed only for eligible applications"
             );
         }
 
@@ -165,44 +181,6 @@ public class DisbursementService {
         }
 
 
-        // ================= REGIONAL BUDGET =================
-
-        String region =
-                application.getUser().getLocation();
-
-
-        RegionalAllocation allocation =
-                regionalAllocationRepo
-                        .findBySchemeId(
-                                application.getScheme().getId()
-                        )
-                        .stream()
-                        .filter(a ->
-                                a.getRegion()
-                                        .equalsIgnoreCase(region)
-                        )
-                        .findFirst()
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Regional allocation not found"
-                                )
-                        );
-
-
-        Double remainingBudget =
-                allocation.getAllocatedBudget()
-                        - allocation.getUsedBudget();
-
-
-        if (installmentAmount
-                > remainingBudget) {
-
-            throw new RuntimeException(
-                    "Insufficient regional budget"
-            );
-        }
-
-
         // ================= SET PAYMENT DETAILS =================
 
         disbursement.setApplication(
@@ -231,19 +209,6 @@ public class DisbursementService {
                 repository.save(disbursement);
 
 
-        // ================= UPDATE REGIONAL BUDGET =================
-
-        allocation.setUsedBudget(
-                allocation.getUsedBudget()
-                        + installmentAmount
-        );
-
-
-        regionalAllocationRepo.save(
-                allocation
-        );
-
-
         // ================= UPDATE INSTALLMENT =================
 
         // Current installment → PAID
@@ -255,16 +220,33 @@ public class DisbursementService {
         installmentPlanRepo.save(
                 plan
         );
-        // If final installment is paid,
-// application is fully disbursed
 
-        if (Integer.valueOf(3).equals(
-                plan.getInstallmentNumber())) {
+
+        // ================= UPDATE APPLICATION STATUS =================
+
+        Integer installmentNumber =
+                plan.getInstallmentNumber();
+
+        if (installmentNumber == 1) {
+
+            application.setStatus("INSTALLMENT_1_PAID");
+
+        } else if (installmentNumber == 2) {
+
+            application.setStatus("INSTALLMENT_2_PAID");
+
+        } else if (installmentNumber == 3) {
 
             application.setStatus("DISBURSED");
         }
 
-        applicationrepo.save(application);
+        application.setStatusUpdatedDate(
+                java.time.LocalDateTime.now()
+        );
+
+        applicationrepo.save(
+                application
+        );
 
 
         // ================= UNLOCK NEXT INSTALLMENT =================
@@ -290,7 +272,6 @@ public class DisbursementService {
                 });
 
 
-
         // ================= EMAIL =================
 
         emailService.sendPaymentDisbursedEmail(
@@ -300,6 +281,7 @@ public class DisbursementService {
                 application.getUser().getFirstName(),
 
                 application.getScheme().getSchemeName(),
+
                 savedDisbursement.getInstallmentNumber(),
 
                 savedDisbursement.getAmount()

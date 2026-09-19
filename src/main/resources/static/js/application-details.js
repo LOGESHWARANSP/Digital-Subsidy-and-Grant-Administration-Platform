@@ -294,12 +294,21 @@ function renderDocuments(documents) {
 
 function renderBankDetails(bankDetails, application) {
 
-    if (application.status !== "DISTRICT_APPROVED") {
+    const bankStatus =
+        bankDetails?.verificationStatus || null;
+
+    // Show Add Bank Details when district approved
+    // and no bank details have been submitted
+    if (
+        !bankDetails &&
+        application.status !== "DISTRICT_APPROVED"
+    ) {
         return "";
     }
 
     // No bank details submitted
     if (!bankDetails) {
+
         return `
             <div class="details-card bank-details-card">
 
@@ -332,6 +341,7 @@ function renderBankDetails(bankDetails, application) {
     const status =
         bankDetails.verificationStatus || "PENDING";
 
+    // Rejected bank details
     if (status === "REJECTED") {
 
         return `
@@ -377,6 +387,7 @@ function renderBankDetails(bankDetails, application) {
         `;
     }
 
+    // Submitted or verified bank details
     return `
         <div class="details-card bank-details-card">
 
@@ -404,7 +415,6 @@ function renderBankDetails(bankDetails, application) {
         </div>
     `;
 }
-
 function renderInstallments(
     installments,
     milestones
@@ -758,7 +768,15 @@ function renderWorkflow(application, bankDetails) {
     if (
         status === "FIELD_VERIFIED" ||
         status === "DISTRICT_APPROVED" ||
-        status === "APPROVED"
+        status === "BANK_DETAILS_SUBMITTED" ||
+        status === "BANK_VERIFIED" ||
+        status === "APPROVED" ||
+        status === "INSTALLMENT_1_PAID" ||
+        status === "UTILIZATION_PROOF_1_SUBMITTED" ||
+        status === "UTILIZATION_PROOF_1_VERIFIED" ||
+        status === "INSTALLMENT_2_PAID" ||
+        status === "UTILIZATION_PROOF_2_VERIFIED" ||
+        status === "DISBURSED"
     ) {
         fieldStatus = "VERIFIED";
     }
@@ -766,13 +784,30 @@ function renderWorkflow(application, bankDetails) {
     // DISTRICT REVIEW
     if (
         status === "DISTRICT_APPROVED" ||
-        status === "APPROVED"
+        status === "BANK_DETAILS_SUBMITTED" ||
+        status === "BANK_VERIFIED" ||
+        status === "APPROVED" ||
+        status === "INSTALLMENT_1_PAID" ||
+        status === "UTILIZATION_PROOF_1_SUBMITTED" ||
+        status === "UTILIZATION_PROOF_1_VERIFIED" ||
+        status === "INSTALLMENT_2_PAID" ||
+        status === "UTILIZATION_PROOF_2_VERIFIED" ||
+        status === "DISBURSED"
     ) {
         districtStatus = "VERIFIED";
     }
 
     // FINANCE APPROVAL
-    if (status === "APPROVED") {
+    if (
+        status === "BANK_VERIFIED" ||
+        status === "APPROVED" ||
+        status === "INSTALLMENT_1_PAID" ||
+        status === "UTILIZATION_PROOF_1_SUBMITTED" ||
+        status === "UTILIZATION_PROOF_1_VERIFIED" ||
+        status === "INSTALLMENT_2_PAID" ||
+        status === "UTILIZATION_PROOF_2_VERIFIED" ||
+        status === "DISBURSED"
+    ) {
         financeStatus = "VERIFIED";
     }
 
@@ -796,7 +831,6 @@ function renderWorkflow(application, bankDetails) {
 
             </div>
 
-
             <div class="workflow-row">
 
                 <span>
@@ -811,7 +845,6 @@ function renderWorkflow(application, bankDetails) {
                 </span>
 
             </div>
-
 
             <div class="workflow-row">
 
@@ -831,6 +864,7 @@ function renderWorkflow(application, bankDetails) {
         </div>
     `;
 }
+
 async function submitUtilizationProof(milestoneId) {
 
     const fileInput =

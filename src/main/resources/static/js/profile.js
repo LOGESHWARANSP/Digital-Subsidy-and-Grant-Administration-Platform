@@ -217,22 +217,19 @@ profileForm.addEventListener(
 
             if (response.ok) {
 
-                profileMessage.className =
-                    "message success";
+                profileMessage.className = "message success";
 
-                profileMessage.textContent =
-                    currentUserId
-                        ? "Profile updated successfully!"
-                        : "Profile saved successfully!";
-
+                if (currentUserId) {
+                    profileMessage.textContent =
+                        "Profile updated successfully!";
+                } else {
+                    profileMessage.textContent =
+                        "Profile created successfully!";
+                }
 
                 setTimeout(function () {
-
-                    window.location.href =
-                        "dashboard.html";
-
+                    window.location.href = "dashboard.html";
                 }, 1000);
-
             } else {
 
                 profileMessage.className =

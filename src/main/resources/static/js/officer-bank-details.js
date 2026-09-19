@@ -5,23 +5,27 @@ const staffEmail =
 
 const staffRole =
     localStorage.getItem("staffRole");
+const staffNav = document.getElementById("staffNav");
 
+if (staffRole === "ADMIN") {
 
-// ================= ACCESS CHECK =================
+    staffNav.innerHTML = `
+        <a href="admin-dashboard.html">Dashboard</a>
+        <a href="admin-schemes.html">Schemes</a>
+        <a href="admin-users.html">Users</a>
+        <a href="admin-applications.html">Applications</a>
+        <a href="officer-bank-details.html" class="active">Bank Details</a>
+        <a href="admin-payments.html">Payments</a>
+        <a href="admin-regional-allocation.html">Regional Allocation</a>
+    `;
 
-if (
-    !staffEmail ||
-    (staffRole !== "ADMIN" &&
-        staffRole !== "FINANCE_OFFICER")
-) {
+} else if (staffRole === "FINANCE_OFFICER") {
 
-    window.location.href =
-        "staff-login.html";
-
-    // Stop execution
-    throw new Error("Unauthorized access");
+    staffNav.innerHTML = `
+        <a href="officer-bank-details.html" class="active">Bank Details</a>
+        <a href="admin-payments.html">Payments</a>
+    `;
 }
-
 
 // ================= TABLE =================
 
